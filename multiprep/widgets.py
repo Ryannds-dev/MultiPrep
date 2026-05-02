@@ -4,24 +4,22 @@ import shutil
 import tempfile
 from pathlib import PureWindowsPath
 from pathlib import Path
-from typing import Optional
 from uuid import uuid4
 
 from PySide6.QtCore import QByteArray, QMimeData, QPoint, QSize, Qt, QUrl, Signal
-from PySide6.QtGui import QAction, QColor, QDrag, QIcon, QPainter, QPixmap
+from PySide6.QtGui import QAction, QColor, QDrag, QIcon, QPixmap
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QDialog,
     QFrame,
-    QGridLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QListView,
     QListWidget,
     QListWidgetItem,
     QMenu,
     QPushButton,
-    QScrollArea,
-    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -29,8 +27,10 @@ from PySide6.QtWidgets import (
 from .models import PageItem, SeparatorOption
 
 
-PAGE_MIME = "application/x-multiprep-page-indexes"
 FILE_MIME = "text/uri-list"
+PAGE_DRAG_MIME = "application/x-multiprep-page-items"
+PAGE_ROLE = Qt.ItemDataRole.UserRole
+PLACEHOLDER_ROLE = Qt.ItemDataRole.UserRole + 1
 MAIL_DROP_DIR = Path(tempfile.mkdtemp(prefix="multiprep_mail_attachments_"))
 
 
@@ -179,386 +179,358 @@ class DropZone(QWidget):
             event.acceptProposedAction()
 
 
-class PageCard(QFrame):
-    selected = Signal(int, object)
-    delete_requested = Signal(int)
-    delete_selection_requested = Signal()
-    delete_all_requested = Signal()
-
-    def __init__(
-        self,
-        item: PageItem,
-        index: int,
-        is_selected: bool = False,
-        parent: QWidget | None = None,
-    ) -> None:
+class PageThumbnailWidget(QFrame):
+    def __init__(self, item: PageItem, number: int, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.item = item
-        self.index = index
-        self._press_pos: Optional[QPoint] = None
-        self.setFrameShape(QFrame.Shape.StyledPanel)
         self.setCursor(Qt.CursorShape.OpenHandCursor)
-        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setFixedWidth(214)
+        self.setStyleSheet(self._style(False))
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(6)
 
-        grip = QLabel("::::")
-        grip.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        grip.setCursor(Qt.CursorShape.OpenHandCursor)
-        grip.setToolTip("Glisser pour deplacer")
-        grip.setFixedHeight(18)
-        grip.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        grip.setStyleSheet(
-            """
-            QLabel {
-                color: #111827;
-                background: rgba(255, 255, 255, 130);
-                border-radius: 4px;
-                font-weight: 700;
-                letter-spacing: 0;
-            }
-            """
-        )
-        layout.addWidget(grip)
+        source_bar = QLabel()
+        source_bar.setFixedHeight(6)
+        source_bar.setStyleSheet(f"background: {item.source.color}; border-radius: 3px;")
+        layout.addWidget(source_bar)
 
-        self.image = QLabel()
-        self.base_pixmap = QPixmap(str(item.thumbnail_path))
-        self.image.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.image.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        image_size = self.base_pixmap.size()
-        if image_size.isEmpty():
-            image_size = QSize(140, 198)
-        self.image.setFixedSize(image_size)
-        self.image.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        layout.addWidget(self.image)
+        image = QLabel()
+        pixmap = QPixmap(str(item.thumbnail_path))
+        image.setPixmap(pixmap)
+        image.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        image.setFixedSize(190, 240)
+        image.setStyleSheet("background: #ffffff; border-radius: 3px;")
+        layout.addWidget(image, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        title = QLabel(item.label)
+        title = QLabel(f"{number}. {item.source.path.name}")
+        if item.is_separator:
+            title.setText(f"{number}. Separateur - {item.source.path.stem}")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setWordWrap(True)
         title.setToolTip(item.display_name)
-        title.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         layout.addWidget(title)
-        self._set_selected(is_selected)
 
-    def _set_selected(self, is_selected: bool) -> None:
-        outline = "#ffffff" if is_selected else self.item.source.color
-        background = self._card_background(is_selected)
+    def set_selected(self, selected: bool) -> None:
+        self.setStyleSheet(self._style(selected))
+
+    def _style(self, selected: bool) -> str:
+        border = "#f9fafb" if selected else self.item.source.color
+        background_alpha = 95 if selected else 45
+        color = QColor(self.item.source.color)
+        return f"""
+        PageThumbnailWidget {{
+            background: rgba({color.red()}, {color.green()}, {color.blue()}, {background_alpha});
+            border: 3px solid {border};
+            border-radius: 8px;
+        }}
+        PageThumbnailWidget QLabel {{
+            color: #172033;
+            background: transparent;
+        }}
+        """
+
+
+class PagePlaceholderWidget(QFrame):
+    def __init__(self, count: int, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setFixedSize(214, 334)
         self.setStyleSheet(
-            f"""
-            PageCard {{
-                background: {background};
-                border: 3px solid {outline};
-                border-radius: 6px;
-            }}
-            PageCard:hover {{
-                border: 4px solid #ffffff;
-            }}
-            PageCard QLabel {{
-                color: #172033;
+            """
+            PagePlaceholderWidget {
+                background: rgba(96, 165, 250, 45);
+                border: 3px dashed #93c5fd;
+                border-radius: 8px;
+            }
+            PagePlaceholderWidget QLabel {
+                color: #dbeafe;
                 background: transparent;
-            }}
+                font-weight: 700;
+            }
             """
         )
-        self.image.setPixmap(self._tinted_pixmap() if is_selected else self.base_pixmap)
+        layout = QVBoxLayout(self)
+        label = QLabel(f"{count} page(s)")
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addStretch()
+        layout.addWidget(label)
+        layout.addStretch()
 
-    def _card_background(self, is_selected: bool) -> str:
-        color = QColor(self.item.source.color)
-        alpha = 95 if is_selected else 45
-        return f"rgba({color.red()}, {color.green()}, {color.blue()}, {alpha})"
 
-    def _tinted_pixmap(self) -> QPixmap:
-        tinted = QPixmap(self.base_pixmap)
-        painter = QPainter(tinted)
-        color = QColor(self.item.source.color)
-        color.setAlpha(85)
-        painter.fillRect(tinted.rect(), color)
-        painter.end()
-        return tinted
+class PageGridListWidget(QListWidget):
+    pdfs_dropped = Signal(list)
+    order_changed = Signal(list)
+    delete_selected_requested = Signal()
 
-    def mousePressEvent(self, event) -> None:
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.selected.emit(self.index, event.modifiers())
-            self.setFocus()
-            self._press_pos = event.position().toPoint()
-            self.setCursor(Qt.CursorShape.ClosedHandCursor)
-        super().mousePressEvent(event)
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._drag_original_pages: list[PageItem] | None = None
+        self._drag_pages: list[PageItem] = []
+        self._placeholder_item: QListWidgetItem | None = None
+        self.setViewMode(QListView.ViewMode.IconMode)
+        self.setResizeMode(QListView.ResizeMode.Adjust)
+        self.setFlow(QListView.Flow.LeftToRight)
+        self.setWrapping(True)
+        self.setMovement(QListView.Movement.Snap)
+        self.setDragEnabled(True)
+        self.setAcceptDrops(True)
+        self.setDropIndicatorShown(True)
+        self.setDragDropMode(QAbstractItemView.DragDropMode.DragDrop)
+        self.setDefaultDropAction(Qt.DropAction.MoveAction)
+        self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.setSpacing(12)
+        self.setUniformItemSizes(False)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
 
-    def mouseMoveEvent(self, event) -> None:
-        if not (event.buttons() & Qt.MouseButton.LeftButton) or self._press_pos is None:
+    def set_pages(self, pages: list[PageItem]) -> None:
+        self.clear()
+        for index, page in enumerate(pages):
+            self._add_page_item(page, index + 1)
+
+    def dragEnterEvent(self, event) -> None:
+        if has_pdf_mime(event.mimeData()):
+            event.acceptProposedAction()
             return
-        if (event.position().toPoint() - self._press_pos).manhattanLength() < 10:
+        if event.mimeData().hasFormat(PAGE_DRAG_MIME):
+            event.acceptProposedAction()
             return
+        super().dragEnterEvent(event)
+
+    def dragMoveEvent(self, event) -> None:
+        if has_pdf_mime(event.mimeData()):
+            event.acceptProposedAction()
+            return
+        if event.mimeData().hasFormat(PAGE_DRAG_MIME):
+            self._move_placeholder(self._target_index_at(event.position().toPoint()))
+            event.acceptProposedAction()
+            return
+        super().dragMoveEvent(event)
+
+    def dropEvent(self, event) -> None:
+        pdfs = pdf_paths_from_mime(event.mimeData())
+        if pdfs:
+            self.pdfs_dropped.emit(pdfs)
+            event.acceptProposedAction()
+            return
+        if event.mimeData().hasFormat(PAGE_DRAG_MIME):
+            self._commit_placeholder_drop()
+            event.acceptProposedAction()
+            return
+        super().dropEvent(event)
+        self.order_changed.emit(self.get_ordered_pages())
+
+    def startDrag(self, supported_actions) -> None:
+        selected_rows = self._selected_rows()
+        if not selected_rows:
+            return
+
+        self._drag_original_pages = self.get_ordered_pages()
+        self._drag_pages = [self._drag_original_pages[row] for row in selected_rows]
+        remaining = [
+            page
+            for index, page in enumerate(self._drag_original_pages)
+            if index not in set(selected_rows)
+        ]
+        placeholder_index = min(selected_rows)
+        self._render_with_placeholder(remaining, placeholder_index)
 
         drag = QDrag(self)
         mime = QMimeData()
-        parent = self.parent()
-        selected = [self.index]
-        while parent:
-            if hasattr(parent, "selected_indexes"):
-                selected = parent.selected_indexes()
-                break
-            parent = parent.parent()
-        if self.index not in selected:
-            selected = [self.index]
-        mime.setData(PAGE_MIME, QByteArray(",".join(str(index) for index in selected).encode("utf-8")))
+        mime.setData(PAGE_DRAG_MIME, QByteArray(b"pages"))
         drag.setMimeData(mime)
-        drag.setPixmap(self.grab())
-        drag.exec(Qt.DropAction.MoveAction)
-        self.setCursor(Qt.CursorShape.OpenHandCursor)
+        widget = self.itemWidget(self._placeholder_item) if self._placeholder_item else None
+        if widget:
+            pixmap = widget.grab()
+            drag.setPixmap(pixmap)
+            drag.setHotSpot(QPoint(pixmap.width() // 2, pixmap.height() // 2))
 
-    def mouseReleaseEvent(self, event) -> None:
-        self.setCursor(Qt.CursorShape.OpenHandCursor)
-        super().mouseReleaseEvent(event)
-
-    def contextMenuEvent(self, event) -> None:
-        parent = self.parent()
-        selected = [self.index]
-        while parent:
-            if hasattr(parent, "selected_indexes"):
-                selected = parent.selected_indexes()
-                break
-            parent = parent.parent()
-        if self.index not in selected:
-            self.selected.emit(self.index, Qt.KeyboardModifier.NoModifier)
-            selected = [self.index]
-
-        menu = QMenu(self)
-        delete_action = QAction("Supprimer cette page", self)
-        delete_action.triggered.connect(lambda: self.delete_requested.emit(self.index))
-        menu.addAction(delete_action)
-        selected_count = len(selected)
-        if selected_count > 1:
-            selection_action = QAction(f"Supprimer la selection ({selected_count})", self)
-            selection_action.triggered.connect(self.delete_selection_requested)
-            menu.addAction(selection_action)
-        menu.addSeparator()
-        delete_all_action = QAction("Supprimer toutes les pages", self)
-        delete_all_action.triggered.connect(self.delete_all_requested)
-        menu.addAction(delete_all_action)
-        menu.exec(event.globalPos())
+        result = drag.exec(Qt.DropAction.MoveAction)
+        if result != Qt.DropAction.MoveAction and self._drag_original_pages is not None:
+            self._restore_cancelled_drag()
 
     def keyPressEvent(self, event) -> None:
-        if event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
-            parent = self.parent()
-            selected_count = 1
-            while parent:
-                if hasattr(parent, "selected_indexes"):
-                    selected_count = len(parent.selected_indexes())
-                    break
-                parent = parent.parent()
-            if selected_count > 1:
-                self.delete_selection_requested.emit()
-            else:
-                self.delete_requested.emit(self.index)
+        if event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace) and self.selectedItems():
+            self.delete_selected_requested.emit()
             event.accept()
             return
         super().keyPressEvent(event)
 
+    def get_ordered_pages(self) -> list[PageItem]:
+        pages: list[PageItem] = []
+        for row in range(self.count()):
+            item = self.item(row)
+            if item.data(PLACEHOLDER_ROLE):
+                continue
+            pages.append(item.data(PAGE_ROLE))
+        return pages
 
-class InsertSlot(QFrame):
-    separator_requested = Signal(int)
-    page_dropped = Signal(list, int)
+    def _selected_rows(self) -> list[int]:
+        return sorted(self.row(item) for item in self.selectedItems() if not item.data(PLACEHOLDER_ROLE))
 
-    def __init__(self, index: int, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self.index = index
-        self.setAcceptDrops(True)
-        self.setFixedSize(56, 250)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(6)
-        self.drop_hint = QLabel("I")
-        self.drop_hint.setObjectName("dropHint")
-        self.drop_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.drop_hint.setFixedHeight(132)
-        self.drop_hint.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        layout.addWidget(self.drop_hint)
-        layout.addStretch()
-        self.button = QPushButton("+")
-        self.button.setFixedSize(36, 36)
-        self.button.setToolTip("Ajouter un separateur")
-        self.button.clicked.connect(lambda: self.separator_requested.emit(self.index))
-        layout.addWidget(self.button, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.action_hint = QLabel("")
-        self.action_hint.setObjectName("actionHint")
-        self.action_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.action_hint.setFixedHeight(28)
-        self.action_hint.setWordWrap(True)
-        self.action_hint.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        layout.addWidget(self.action_hint)
-        self._set_active(False)
+    def _add_page_item(self, page: PageItem, number: int) -> QListWidgetItem:
+        item = QListWidgetItem()
+        item.setData(PAGE_ROLE, page)
+        item.setData(PLACEHOLDER_ROLE, False)
+        item.setSizeHint(QSize(226, 334))
+        self.addItem(item)
+        self.setItemWidget(item, PageThumbnailWidget(page, number))
+        return item
 
-    def _set_active(self, active: bool) -> None:
-        border = "#facc15" if active else "#475569"
-        background = "rgba(250, 204, 21, 95)" if active else "rgba(148, 163, 184, 35)"
-        hint_background = "#facc15" if active else "#64748b"
-        hint_color = "#111827" if active else "#cbd5e1"
-        self.action_hint.setText("DEPOSER ICI" if active else "")
-        self.setStyleSheet(
-            f"""
-            InsertSlot {{
-                border: 2px dashed {border};
-                border-radius: 8px;
-                background: {background};
-            }}
-            InsertSlot:hover {{
-                border-color: #93c5fd;
-                background: rgba(59, 130, 246, 55);
-            }}
-            InsertSlot QLabel#actionHint {{
-                color: {hint_color};
-                background: transparent;
-                font-size: 9px;
-                font-weight: 800;
-            }}
-            InsertSlot QLabel#dropHint {{
-                color: {hint_background};
-                background: transparent;
-                font-size: 64px;
-                font-weight: 900;
-            }}
-            QPushButton {{
-                border-radius: 18px;
-                background: #3b82f6;
-                color: #ffffff;
-                font-weight: bold;
-                font-size: 16px;
-            }}
-            """
-        )
+    def _insert_placeholder(self, index: int) -> None:
+        item = QListWidgetItem()
+        item.setData(PLACEHOLDER_ROLE, True)
+        item.setSizeHint(QSize(226, 334))
+        self.insertItem(index, item)
+        self.setItemWidget(item, PagePlaceholderWidget(len(self._drag_pages)))
+        self._placeholder_item = item
 
-    def dragEnterEvent(self, event) -> None:
-        if event.mimeData().hasFormat(PAGE_MIME):
-            self._set_active(True)
-            event.acceptProposedAction()
+    def _render_with_placeholder(self, pages: list[PageItem], placeholder_index: int) -> None:
+        self.clear()
+        placeholder_index = max(0, min(placeholder_index, len(pages)))
+        for index in range(len(pages) + 1):
+            if index == placeholder_index:
+                self._insert_placeholder(index)
+            if index < len(pages):
+                self._add_page_item(pages[index], index + 1)
 
-    def dragMoveEvent(self, event) -> None:
-        if event.mimeData().hasFormat(PAGE_MIME):
-            self._set_active(True)
-            event.acceptProposedAction()
+    def _target_index_at(self, position: QPoint) -> int:
+        item = self.itemAt(position)
+        if item is None:
+            return self.count() - (1 if self._placeholder_item else 0)
+        index = self.row(item)
+        rect = self.visualItemRect(item)
+        if position.x() > rect.center().x():
+            index += 1
+        if self._placeholder_item is not None:
+            placeholder_index = self.row(self._placeholder_item)
+            if index > placeholder_index:
+                index -= 1
+        return max(0, min(index, self.count() - 1))
 
-    def dragLeaveEvent(self, event) -> None:
-        self._set_active(False)
-        super().dragLeaveEvent(event)
+    def _move_placeholder(self, target_index: int) -> None:
+        if self._placeholder_item is None:
+            return
+        current_index = self.row(self._placeholder_item)
+        target_index = max(0, min(target_index, self.count() - 1))
+        if current_index == target_index:
+            return
+        item = self.takeItem(current_index)
+        self.insertItem(target_index, item)
+        self.setItemWidget(item, PagePlaceholderWidget(len(self._drag_pages)))
+        self._placeholder_item = item
 
-    def dropEvent(self, event) -> None:
-        self._set_active(False)
-        raw = bytes(event.mimeData().data(PAGE_MIME)).decode("utf-8")
-        source_indexes = [int(index) for index in raw.split(",") if index]
-        self.page_dropped.emit(source_indexes, self.index)
-        event.acceptProposedAction()
+    def _commit_placeholder_drop(self) -> None:
+        if self._placeholder_item is None:
+            self._restore_cancelled_drag()
+            return
+        placeholder_index = self.row(self._placeholder_item)
+        pages = self.get_ordered_pages()
+        for offset, page in enumerate(self._drag_pages):
+            pages.insert(placeholder_index + offset, page)
+        self._clear_drag_state()
+        self.set_pages(pages)
+        self.order_changed.emit(pages)
+
+    def _restore_cancelled_drag(self) -> None:
+        pages = self._drag_original_pages or []
+        self._clear_drag_state()
+        self.set_pages(pages)
+
+    def _clear_drag_state(self) -> None:
+        self._drag_original_pages = None
+        self._drag_pages = []
+        self._placeholder_item = None
 
 
-class PageBoard(DropZone):
-    move_page_requested = Signal(list, int)
+class PageBoard(QWidget):
+    order_changed = Signal(list)
     separator_requested = Signal(int)
     delete_pages_requested = Signal(list)
     delete_all_requested = Signal()
+    pdfs_dropped = Signal(list)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.pages: list[PageItem] = []
-        self.selected_indices: set[int] = set()
-        self.anchor_index: int | None = None
-        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setAcceptDrops(True)
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
-        self.scroll = QScrollArea()
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setAcceptDrops(True)
-        self.content = QWidget()
-        self.grid = QGridLayout(self.content)
-        self.grid.setContentsMargins(14, 14, 14, 14)
-        self.grid.setSpacing(8)
-        self.scroll.setWidget(self.content)
-        root.addWidget(self.scroll)
+        self.list_widget = PageGridListWidget()
+        self.list_widget.pdfs_dropped.connect(self.pdfs_dropped)
+        self.list_widget.order_changed.connect(self._apply_order)
+        self.list_widget.delete_selected_requested.connect(self.delete_selection)
+        self.list_widget.itemSelectionChanged.connect(self._sync_selection_styles)
+        self.list_widget.customContextMenuRequested.connect(self._open_context_menu)
+        root.addWidget(self.list_widget)
 
     def set_pages(self, pages: list[PageItem]) -> None:
         self.pages = pages
-        self.selected_indices = {index for index in self.selected_indices if index < len(pages)}
-        if self.anchor_index is not None and self.anchor_index >= len(pages):
-            self.anchor_index = max(self.selected_indices) if self.selected_indices else None
-
-        while self.grid.count():
-            child = self.grid.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-
-        if not pages:
-            label = QLabel("Importez ou glissez des PDF ici")
-            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            label.setStyleSheet("font-size: 18px; color: #cbd5e1; background: transparent;")
-            self.grid.addWidget(label, 0, 0)
-            return
-
-        columns = 3
-        visual_index = 0
-        for page_index, page in enumerate(pages):
-            slot = InsertSlot(page_index)
-            slot.separator_requested.connect(self.separator_requested)
-            slot.page_dropped.connect(self.move_page_requested)
-            row = visual_index // (columns * 2)
-            col = visual_index % (columns * 2)
-            self.grid.addWidget(slot, row, col)
-            visual_index += 1
-
-            card = PageCard(page, page_index, page_index in self.selected_indices)
-            card.selected.connect(self.select_page)
-            card.delete_requested.connect(lambda index: self.delete_pages_requested.emit([index]))
-            card.delete_selection_requested.connect(self.delete_selection)
-            card.delete_all_requested.connect(self.delete_all_requested)
-            row = visual_index // (columns * 2)
-            col = visual_index % (columns * 2)
-            self.grid.addWidget(card, row, col)
-            visual_index += 1
-
-        slot = InsertSlot(len(pages))
-        slot.separator_requested.connect(self.separator_requested)
-        slot.page_dropped.connect(self.move_page_requested)
-        row = visual_index // (columns * 2)
-        col = visual_index % (columns * 2)
-        self.grid.addWidget(slot, row, col)
-
-    def select_page(self, index: int, modifiers) -> None:
-        if modifiers & Qt.KeyboardModifier.ShiftModifier and self.anchor_index is not None:
-            start = min(self.anchor_index, index)
-            end = max(self.anchor_index, index)
-            self.selected_indices = set(range(start, end + 1))
-        elif modifiers & Qt.KeyboardModifier.ControlModifier:
-            if index in self.selected_indices:
-                self.selected_indices.remove(index)
-            else:
-                self.selected_indices.add(index)
-                self.anchor_index = index
-        else:
-            self.selected_indices = {index}
-            self.anchor_index = index
-        self.setFocus()
-        for item_index in range(self.grid.count()):
-            widget = self.grid.itemAt(item_index).widget()
-            if isinstance(widget, PageCard):
-                widget._set_selected(widget.index in self.selected_indices)
+        self.list_widget.set_pages(pages)
 
     def selected_indexes(self) -> list[int]:
-        return sorted(self.selected_indices)
+        return sorted(self.list_widget.row(item) for item in self.list_widget.selectedItems())
 
     def clear_selection(self) -> None:
-        self.selected_indices.clear()
-        self.anchor_index = None
+        self.list_widget.clearSelection()
 
     def delete_selection(self) -> None:
-        if self.selected_indices:
+        if self.list_widget.selectedItems():
             self.delete_pages_requested.emit(self.selected_indexes())
 
-    def keyPressEvent(self, event) -> None:
-        if event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
-            if self.selected_indices:
-                self.delete_pages_requested.emit(self.selected_indexes())
-                event.accept()
-                return
-        super().keyPressEvent(event)
+    def get_ordered_pages(self) -> list[PageItem]:
+        return self.list_widget.get_ordered_pages()
+
+    def _apply_order(self, pages: list[PageItem]) -> None:
+        self.pages = pages
+        self._refresh_numbers()
+        self.order_changed.emit(pages)
+
+    def _refresh_numbers(self) -> None:
+        self.list_widget.set_pages(self.list_widget.get_ordered_pages())
+        self._sync_selection_styles()
+
+    def _sync_selection_styles(self) -> None:
+        for row in range(self.list_widget.count()):
+            item = self.list_widget.item(row)
+            if item.data(PLACEHOLDER_ROLE):
+                continue
+            widget = self.list_widget.itemWidget(item)
+            if isinstance(widget, PageThumbnailWidget):
+                widget.set_selected(item.isSelected())
+
+    def _open_context_menu(self, position: QPoint) -> None:
+        item = self.list_widget.itemAt(position)
+        if item and not item.isSelected():
+            self.list_widget.clearSelection()
+            item.setSelected(True)
+
+        menu = QMenu(self)
+        selected_count = len(self.list_widget.selectedItems())
+        if item:
+            delete_action = QAction(
+                f"Supprimer la selection ({selected_count})" if selected_count > 1 else "Supprimer cette page",
+                self,
+            )
+            delete_action.triggered.connect(self.delete_selection)
+            menu.addAction(delete_action)
+
+            row = self.list_widget.row(item)
+            before_action = QAction("Ajouter un separateur avant", self)
+            before_action.triggered.connect(lambda: self.separator_requested.emit(row))
+            after_action = QAction("Ajouter un separateur apres", self)
+            after_action.triggered.connect(lambda: self.separator_requested.emit(row + 1))
+            menu.addAction(before_action)
+            menu.addAction(after_action)
+
+        end_separator = QAction("Ajouter un separateur a la fin", self)
+        end_separator.triggered.connect(lambda: self.separator_requested.emit(self.list_widget.count()))
+        menu.addAction(end_separator)
+        menu.addSeparator()
+        delete_all_action = QAction("Supprimer toutes les pages", self)
+        delete_all_action.triggered.connect(self.delete_all_requested)
+        menu.addAction(delete_all_action)
+        menu.exec(self.list_widget.viewport().mapToGlobal(position))
 
 
 class SeparatorDialog(QDialog):

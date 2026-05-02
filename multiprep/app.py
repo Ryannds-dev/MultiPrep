@@ -133,7 +133,7 @@ class MultiPrepWindow(QMainWindow):
 
         self.board = PageBoard()
         self.board.pdfs_dropped.connect(self.add_pdfs)
-        self.board.move_page_requested.connect(self.move_page)
+        self.board.order_changed.connect(self.set_page_order)
         self.board.separator_requested.connect(self.open_separator_dialog)
         self.board.delete_pages_requested.connect(self.delete_pages)
         self.board.delete_all_requested.connect(self.delete_all_pages)
@@ -274,9 +274,10 @@ class MultiPrepWindow(QMainWindow):
         target_index = max(0, min(target_index, len(self.pages)))
         for offset, page in enumerate(moving_pages):
             self.pages.insert(target_index + offset, page)
-        self.board.selected_indices = set(range(target_index, target_index + len(moving_pages)))
-        self.board.anchor_index = target_index
         self.board.set_pages(self.pages)
+
+    def set_page_order(self, pages: list[PageItem]) -> None:
+        self.pages = pages
 
     def delete_pages(self, page_indexes: list[int]) -> None:
         valid_indexes = sorted({index for index in page_indexes if 0 <= index < len(self.pages)}, reverse=True)

@@ -9,16 +9,21 @@ Application desktop Windows en Python/PySide6 pour preparer un PDF final a parti
 - Reorganisation des pages par glisser-deposer entre les emplacements.
 - Selection multiple avec `Shift` pour une plage et `Ctrl` pour ajouter/enlever une page.
 - Reorganisation des pages selectionnees par glisser-deposer entre les emplacements.
-- Pendant le glisser-deposer, la zone d'arrivee s'allume et affiche `DEPOSER ICI`.
+- Pendant le glisser-deposer, un ghost et un indicateur d'insertion montrent la position cible.
 - Suppression d'une page, de la selection, ou de toutes les pages avec `Suppr` / `Delete` ou clic droit.
 - Couleur de bordure commune pour les pages provenant du meme PDF.
-- Bouton `+` entre les pages pour inserer un separateur.
+- Insertion d'un separateur avant/apres une page via clic droit.
 - Separateurs charges depuis le dossier local `separateurs/`.
 - Fenetre de recherche et selection des separateurs.
 - Champs `Nom`, `Prenom`, date `JJ / MM / AAAA`, suffixe `P`.
 - Memorisation de la derniere date dans `settings.json`.
 - Fusion dans l'ordre affiche avec export au format `AAAA-MM-JJ_NOM-Prenom_P.pdf`.
 - Ecran resultat avec fichier PDF draggable vers une autre application Windows.
+
+## Choix technique pour la grille
+
+La grille de pages utilise `QListWidget` en `IconMode` avec un drag interne personnalise.
+Ce choix garde une implementation robuste PySide6 avec selection multiple, ghost de drag, placeholder de position cible pendant le mouvement, restauration si le drag est annule et recuperation de l'ordre final via `get_ordered_pages()`.
 
 ## Installation
 
