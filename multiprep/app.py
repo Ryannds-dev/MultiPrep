@@ -28,7 +28,14 @@ from PySide6.QtWidgets import (
 from .models import PageItem, SourceDocument
 from .pdf_service import PdfService
 from .settings import load_settings, save_last_date
-from .widgets import DraggableFile, PageBoard, SeparatorDialog
+from .widgets import (
+    DraggableFile,
+    PageBoard,
+    SeparatorDialog,
+    cleanup_mail_drop_dir,
+    has_pdf_mime,
+    pdf_paths_from_mime,
+)
 
 
 def build_source_colors(count: int = 100) -> list[str]:
@@ -138,10 +145,11 @@ class MultiPrepWindow(QMainWindow):
 
     def closeEvent(self, event) -> None:
         self.pdf_service.cleanup()
+        cleanup_mail_drop_dir()
         super().closeEvent(event)
 
     def dragEnterEvent(self, event) -> None:
-        if event.mimeData().hasUrls() and self._pdfs_from_event(event):
+        if has_pdf_mime(event.mimeData()):
             event.acceptProposedAction()
             return
         super().dragEnterEvent(event)
@@ -368,7 +376,7 @@ class MultiPrepWindow(QMainWindow):
         without_accents = "".join(
             char for char in normalized if not unicodedata.combining(char)
         )
-        with_spaces = re.sub(r"[-'’`´]", " ", without_accents)
+        with_spaces = re.sub(r"[-'\u2019`\u00b4]", " ", without_accents)
         alphanumeric_spaces = re.sub(r"[^A-Za-z0-9 ]+", "", with_spaces)
         compact = re.sub(r"\s+", " ", alphanumeric_spaces).strip()
         if uppercase:
@@ -376,11 +384,7 @@ class MultiPrepWindow(QMainWindow):
         return compact[:1].upper() + compact[1:].lower() if compact else ""
 
     def _pdfs_from_event(self, event) -> list[Path]:
-        return [
-            Path(url.toLocalFile())
-            for url in event.mimeData().urls()
-            if url.isLocalFile() and url.toLocalFile().lower().endswith(".pdf")
-        ]
+        return pdf_paths_from_mime(event.mimeData())
 
     def _apply_style(self) -> None:
         self.setStyleSheet(

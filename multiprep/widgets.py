@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import shutil
+import tempfile
+from pathlib import PureWindowsPath
 from pathlib import Path
 from typing import Optional
+from uuid import uuid4
 
 from PySide6.QtCore import QByteArray, QMimeData, QPoint, QSize, Qt, QUrl, Signal
 from PySide6.QtGui import QAction, QColor, QDrag, QIcon, QPainter, QPixmap
@@ -27,6 +31,132 @@ from .models import PageItem, SeparatorOption
 
 PAGE_MIME = "application/x-multiprep-page-indexes"
 FILE_MIME = "text/uri-list"
+MAIL_DROP_DIR = Path(tempfile.mkdtemp(prefix="multiprep_mail_attachments_"))
+
+
+def has_pdf_mime(mime_data: QMimeData) -> bool:
+    if _local_pdf_paths(mime_data):
+        return True
+    return any(name.lower().endswith(".pdf") for name in _windows_attachment_names(mime_data))
+
+
+def pdf_paths_from_mime(mime_data: QMimeData) -> list[Path]:
+    local_paths = _local_pdf_paths(mime_data)
+    if local_paths:
+        return local_paths
+    return _extract_windows_pdf_attachments(mime_data)
+
+
+def cleanup_mail_drop_dir() -> None:
+    shutil.rmtree(MAIL_DROP_DIR, ignore_errors=True)
+
+
+def _local_pdf_paths(mime_data: QMimeData) -> list[Path]:
+    if not mime_data.hasUrls():
+        return []
+    return [
+        Path(url.toLocalFile())
+        for url in mime_data.urls()
+        if url.isLocalFile() and url.toLocalFile().lower().endswith(".pdf")
+    ]
+
+
+def _extract_windows_pdf_attachments(mime_data: QMimeData) -> list[Path]:
+    names = _windows_attachment_names(mime_data)
+    if not names:
+        return []
+
+    MAIL_DROP_DIR.mkdir(parents=True, exist_ok=True)
+    paths: list[Path] = []
+    for index, name in enumerate(names):
+        if not name.lower().endswith(".pdf"):
+            continue
+        data = _windows_file_contents(mime_data, index)
+        if not data:
+            continue
+        safe_name = _safe_attachment_name(name)
+        path = MAIL_DROP_DIR / f"{uuid4().hex}_{safe_name}"
+        path.write_bytes(data)
+        paths.append(path)
+    return paths
+
+
+def _safe_attachment_name(name: str) -> str:
+    filename = PureWindowsPath(name).name
+    filename = filename.replace("/", "_").replace("\\", "_").strip()
+    return filename or "piece_jointe.pdf"
+
+
+def _windows_attachment_names(mime_data: QMimeData) -> list[str]:
+    descriptor_format = _find_windows_mime_format(mime_data, "FileGroupDescriptorW")
+    if descriptor_format:
+        return _parse_file_group_descriptor_w(bytes(mime_data.data(descriptor_format)))
+
+    descriptor_format = _find_windows_mime_format(mime_data, "FileGroupDescriptor")
+    if descriptor_format:
+        return _parse_file_group_descriptor_a(bytes(mime_data.data(descriptor_format)))
+
+    return []
+
+
+def _find_windows_mime_format(mime_data: QMimeData, value: str, index: int | None = None) -> str | None:
+    for fmt in mime_data.formats():
+        if f'value="{value}"' not in fmt:
+            continue
+        if index is not None and f"index={index}" not in fmt:
+            continue
+        return fmt
+    return None
+
+
+def _windows_file_contents(mime_data: QMimeData, index: int) -> bytes:
+    content_format = _find_windows_mime_format(mime_data, "FileContents", index)
+    if content_format is None and index == 0:
+        content_format = _find_windows_mime_format(mime_data, "FileContents")
+    if content_format is None:
+        return b""
+    return bytes(mime_data.data(content_format))
+
+
+def _parse_file_group_descriptor_w(data: bytes) -> list[str]:
+    return _parse_file_group_descriptor(data, descriptor_size=592, name_offset=72, name_size=520, encoding="utf-16le")
+
+
+def _parse_file_group_descriptor_a(data: bytes) -> list[str]:
+    return _parse_file_group_descriptor(data, descriptor_size=332, name_offset=72, name_size=260, encoding="mbcs")
+
+
+def _parse_file_group_descriptor(
+    data: bytes,
+    descriptor_size: int,
+    name_offset: int,
+    name_size: int,
+    encoding: str,
+) -> list[str]:
+    if len(data) < 4:
+        return []
+    count = int.from_bytes(data[:4], "little", signed=False)
+    names: list[str] = []
+    for index in range(count):
+        start = 4 + index * descriptor_size + name_offset
+        end = start + name_size
+        if end > len(data):
+            break
+        raw_name = data[start:end]
+        if encoding == "utf-16le":
+            terminator = raw_name.find(b"\x00\x00")
+            if terminator != -1:
+                terminator += terminator % 2
+                raw_name = raw_name[:terminator]
+        else:
+            raw_name = raw_name.split(b"\x00", 1)[0]
+        try:
+            name = raw_name.decode(encoding, errors="ignore").strip("\x00").strip()
+        except LookupError:
+            name = raw_name.decode("latin1", errors="ignore").strip("\x00").strip()
+        if name:
+            names.append(name)
+    return names
 
 
 class DropZone(QWidget):
@@ -37,23 +167,13 @@ class DropZone(QWidget):
         self.setAcceptDrops(True)
 
     def dragEnterEvent(self, event) -> None:
-        if event.mimeData().hasUrls():
-            pdfs = [
-                Path(url.toLocalFile())
-                for url in event.mimeData().urls()
-                if url.isLocalFile() and url.toLocalFile().lower().endswith(".pdf")
-            ]
-            if pdfs:
-                event.acceptProposedAction()
-                return
+        if has_pdf_mime(event.mimeData()):
+            event.acceptProposedAction()
+            return
         super().dragEnterEvent(event)
 
     def dropEvent(self, event) -> None:
-        pdfs = [
-            Path(url.toLocalFile())
-            for url in event.mimeData().urls()
-            if url.isLocalFile() and url.toLocalFile().lower().endswith(".pdf")
-        ]
+        pdfs = pdf_paths_from_mime(event.mimeData())
         if pdfs:
             self.pdfs_dropped.emit(pdfs)
             event.acceptProposedAction()
