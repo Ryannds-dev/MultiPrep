@@ -3,12 +3,13 @@ from __future__ import annotations
 import re
 import sys
 import unicodedata
+import ctypes
 from colorsys import hls_to_rgb
 from datetime import date
 from pathlib import Path
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QKeySequence
+from PySide6.QtGui import QIcon, QKeySequence
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -53,6 +54,21 @@ def build_source_colors(count: int = 100) -> list[str]:
 
 
 SOURCE_COLORS = build_source_colors()
+APP_ICON_PATH = Path("assets") / "multiprep-logo.ico"
+
+
+def resource_path(relative_path: Path) -> Path:
+    base_path = Path(getattr(sys, "_MEIPASS", Path.cwd()))
+    return base_path / relative_path
+
+
+def set_windows_app_id() -> None:
+    if sys.platform != "win32":
+        return
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("MultiPrep.MultiPrep")
+    except Exception:
+        pass
 
 
 class DateSpin(QWidget):
@@ -102,6 +118,7 @@ class MultiPrepWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("MultiPrep")
+        self.setWindowIcon(QIcon(str(resource_path(APP_ICON_PATH))))
         self.resize(1180, 760)
         self.setAcceptDrops(True)
 
@@ -542,7 +559,9 @@ class MultiPrepWindow(QMainWindow):
 
 
 def main() -> None:
+    set_windows_app_id()
     app = QApplication(sys.argv)
+    app.setWindowIcon(QIcon(str(resource_path(APP_ICON_PATH))))
     window = MultiPrepWindow()
     window.show()
     sys.exit(app.exec())
