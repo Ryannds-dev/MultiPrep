@@ -7,7 +7,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from PySide6.QtCore import QByteArray, QMimeData, QPoint, QSize, Qt, QUrl, Signal
-from PySide6.QtGui import QAction, QColor, QDrag, QIcon, QPixmap
+from PySide6.QtGui import QAction, QColor, QDrag, QIcon, QKeySequence, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QDialog,
@@ -205,7 +205,9 @@ class PageThumbnailWidget(QFrame):
         layout.addWidget(image, alignment=Qt.AlignmentFlag.AlignCenter)
 
         title = QLabel(f"{number}. {item.source.path.name}")
-        if item.is_separator:
+        if item.page_type == "capture":
+            title.setText(f"{number}. Capture")
+        elif item.is_separator:
             title.setText(f"{number}. Separateur - {item.source.path.stem}")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setWordWrap(True)
@@ -226,7 +228,7 @@ class PageThumbnailWidget(QFrame):
             border-radius: 8px;
         }}
         PageThumbnailWidget QLabel {{
-            color: #172033;
+            color: #f9fafb;
             background: transparent;
         }}
         """
@@ -262,6 +264,7 @@ class PageGridListWidget(QListWidget):
     pdfs_dropped = Signal(list)
     order_changed = Signal(list)
     delete_selected_requested = Signal()
+    paste_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -350,6 +353,10 @@ class PageGridListWidget(QListWidget):
             self._restore_cancelled_drag()
 
     def keyPressEvent(self, event) -> None:
+        if event.matches(QKeySequence.StandardKey.Paste):
+            self.paste_requested.emit()
+            event.accept()
+            return
         if event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace) and self.selectedItems():
             self.delete_selected_requested.emit()
             event.accept()
@@ -449,6 +456,7 @@ class PageBoard(QWidget):
     delete_pages_requested = Signal(list)
     delete_all_requested = Signal()
     pdfs_dropped = Signal(list)
+    paste_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -457,9 +465,10 @@ class PageBoard(QWidget):
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         self.list_widget = PageGridListWidget()
-        self.list_widget.pdfs_dropped.connect(self.pdfs_dropped)
+        self.list_widget.pdfs_dropped.connect(self.pdfs_dropped.emit)
         self.list_widget.order_changed.connect(self._apply_order)
         self.list_widget.delete_selected_requested.connect(self.delete_selection)
+        self.list_widget.paste_requested.connect(self.paste_requested.emit)
         self.list_widget.itemSelectionChanged.connect(self._sync_selection_styles)
         self.list_widget.customContextMenuRequested.connect(self._open_context_menu)
         root.addWidget(self.list_widget)
@@ -506,6 +515,10 @@ class PageBoard(QWidget):
             item.setSelected(True)
 
         menu = QMenu(self)
+        paste_action = QAction("Coller", self)
+        paste_action.triggered.connect(lambda _checked=False: self.paste_requested.emit())
+        menu.addAction(paste_action)
+        menu.addSeparator()
         selected_count = len(self.list_widget.selectedItems())
         if item:
             delete_action = QAction(
@@ -528,7 +541,7 @@ class PageBoard(QWidget):
         menu.addAction(end_separator)
         menu.addSeparator()
         delete_all_action = QAction("Supprimer toutes les pages", self)
-        delete_all_action.triggered.connect(self.delete_all_requested)
+        delete_all_action.triggered.connect(lambda _checked=False: self.delete_all_requested.emit())
         menu.addAction(delete_all_action)
         menu.exec(self.list_widget.viewport().mapToGlobal(position))
 

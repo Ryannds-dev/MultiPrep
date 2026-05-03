@@ -8,6 +8,7 @@ from datetime import date
 from pathlib import Path
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -137,6 +138,7 @@ class MultiPrepWindow(QMainWindow):
         self.board.separator_requested.connect(self.open_separator_dialog)
         self.board.delete_pages_requested.connect(self.delete_pages)
         self.board.delete_all_requested.connect(self.delete_all_pages)
+        self.board.paste_requested.connect(self.handle_paste)
 
         self._build_editor()
         self._build_result_shell()
@@ -161,6 +163,13 @@ class MultiPrepWindow(QMainWindow):
             event.acceptProposedAction()
             return
         super().dropEvent(event)
+
+    def keyPressEvent(self, event) -> None:
+        if event.matches(QKeySequence.StandardKey.Paste):
+            self.handle_paste()
+            event.accept()
+            return
+        super().keyPressEvent(event)
 
     def _build_editor(self) -> None:
         layout = QVBoxLayout(self.editor_page)
@@ -187,6 +196,10 @@ class MultiPrepWindow(QMainWindow):
         top.addWidget(import_button)
         top.addWidget(generate_button)
         layout.addLayout(top)
+
+        paste_hint = QLabel("Astuce : utilisez Ctrl + V ou clic droit -> coller pour coller une capture du mail")
+        paste_hint.setStyleSheet("color: #cbd5e1; font-size: 9pt;")
+        layout.addWidget(paste_hint)
         layout.addWidget(self.board, 1)
 
     def _build_result_shell(self) -> None:
@@ -261,6 +274,40 @@ class MultiPrepWindow(QMainWindow):
             except Exception as exc:
                 QMessageBox.warning(self, "Import impossible", f"{path.name}\n{exc}")
         self.board.set_pages(self.pages)
+
+    def handle_paste(self) -> None:
+        clipboard = QApplication.clipboard()
+        mime_data = clipboard.mimeData()
+        if not mime_data.hasImage():
+            QMessageBox.information(self, "Coller", "Aucune image à coller")
+            return
+
+        image = clipboard.image()
+        if image.isNull():
+            QMessageBox.information(self, "Coller", "Aucune image à coller")
+            return
+
+        image_path = self.pdf_service.cache_dir / f"clipboard_capture_{self.next_source_id}.png"
+        if not image.save(str(image_path), "PNG"):
+            QMessageBox.warning(self, "Coller", "Impossible de lire l'image du presse-papier.")
+            return
+
+        color = SOURCE_COLORS[(self.next_source_id - 1) % len(SOURCE_COLORS)]
+        source_id = self.next_source_id
+        self.next_source_id += 1
+        try:
+            page = self.pdf_service.capture_page(image_path, source_id, color)
+        except Exception as exc:
+            QMessageBox.warning(self, "Coller", f"Impossible d'ajouter la capture.\n{exc}")
+            return
+
+        self.pages.append(page)
+        self.sources.append(page.source)
+        self.board.set_pages(self.pages)
+        last_row = len(self.pages) - 1
+        self.board.list_widget.setCurrentRow(last_row)
+        self.board.list_widget.scrollToItem(self.board.list_widget.item(last_row))
+        self.statusBar().showMessage("Capture ajoutée", 2500)
 
     def move_page(self, source_indexes: list[int], target_index: int) -> None:
         valid_indexes = sorted({index for index in source_indexes if 0 <= index < len(self.pages)})

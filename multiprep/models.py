@@ -19,9 +19,12 @@ class PageItem:
     thumbnail_path: Path
     label: str
     is_separator: bool = False
+    page_type: str = "page"
 
     @property
     def display_name(self) -> str:
+        if self.page_type == "capture":
+            return self.label
         if self.is_separator:
             return self.source.path.stem
         return f"{self.source.path.name} - p.{self.page_index + 1}"

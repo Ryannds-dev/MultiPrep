@@ -78,6 +78,27 @@ class PdfService:
                 )
         return items
 
+    def capture_page(self, image_path: Path, source_id: int, color: str) -> PageItem:
+        pdf_path = self.cache_dir / f"capture_{source_id}.pdf"
+        with fitz.open() as doc:
+            pixmap = fitz.Pixmap(str(image_path))
+            width = pixmap.width
+            height = pixmap.height
+            page = doc.new_page(width=width, height=height)
+            page.insert_image(page.rect, filename=str(image_path))
+            doc.save(pdf_path)
+
+        source = SourceDocument(source_id, pdf_path, color)
+        with fitz.open(pdf_path) as doc:
+            thumb = self._render_thumbnail(doc[0], f"capture_{source_id}_thumb.png")
+        return PageItem(
+            source=source,
+            page_index=0,
+            thumbnail_path=thumb,
+            label="Capture",
+            page_type="capture",
+        )
+
     def merge(self, pages: Sequence[PageItem], output_path: Path) -> None:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         writer = PdfWriter()

@@ -5,6 +5,7 @@ Application desktop Windows en Python/PySide6 pour preparer un PDF final a parti
 ## Fonctionnalites V1
 
 - Import de PDF par bouton ou glisser-deposer.
+- Collage d'une capture d'ecran avec `Ctrl + V` ou clic droit puis `Coller`.
 - Affichage des pages en miniatures dans un espace principal.
 - Reorganisation des pages par glisser-deposer entre les emplacements.
 - Selection multiple avec `Shift` pour une plage et `Ctrl` pour ajouter/enlever une page.
