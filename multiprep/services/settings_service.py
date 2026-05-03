@@ -3,10 +3,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from datetime import date
-from pathlib import Path
 
-
-SETTINGS_FILE = Path("settings.json")
+from multiprep.utils.paths import SETTINGS_FILE
 
 
 @dataclass

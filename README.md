@@ -26,6 +26,24 @@ Application desktop Windows en Python/PySide6 pour preparer un PDF final a parti
 La grille de pages utilise `QListWidget` en `IconMode` avec un drag interne personnalise.
 Ce choix garde une implementation robuste PySide6 avec selection multiple, ghost de drag, placeholder de position cible pendant le mouvement, restauration si le drag est annule et recuperation de l'ordre final via `get_ordered_pages()`.
 
+## Structure du code
+
+Fichiers a lire en premier :
+
+- `main.py` : lance l'application.
+- `multiprep/ui/main_window.py` : initialise la fenetre principale.
+- `multiprep/ui/main_window_actions.py` : actions utilisateur principales.
+- `multiprep/ui/page_board.py` : conteneur de la grille et menu clic droit.
+- `multiprep/ui/page_grid_list.py` : liste draggable avec placeholder.
+- `multiprep/services/pdf_service.py` : import PDF, captures, separateurs et fusion.
+
+Dossiers :
+
+- `multiprep/ui/` : composants visuels PySide6.
+- `multiprep/services/` : logique metier sans interface.
+- `multiprep/models/` : donnees partagees.
+- `multiprep/utils/` : chemins et constantes utilitaires.
+
 ## Installation
 
 Prerequis : Python 3.11 ou plus recent.
@@ -39,7 +57,7 @@ pip install -r requirements.txt
 ## Lancement
 
 ```powershell
-python run.py
+python main.py
 ```
 
 ## Separateurs
@@ -54,7 +72,7 @@ Le dossier est cree automatiquement au premier usage si absent.
 
 ## Export
 
-Les fichiers generes sont places dans :
+Les fichiers générés sont placés dans :
 
 ```text
 exports/
