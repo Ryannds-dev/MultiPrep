@@ -4,7 +4,7 @@ Application desktop Windows en Python/PySide6 pour preparer un PDF final a parti
 
 ## Fonctionnalites V1
 
-- Import de PDF par bouton ou glisser-deposer.
+- Import de PDF, JPG et PNG par bouton ou glisser-deposer.
 - Collage d'une capture d'ecran avec `Ctrl + V` ou clic droit puis `Coller`.
 - Affichage des pages en miniatures dans un espace principal.
 - Reorganisation des pages par glisser-deposer entre les emplacements.
@@ -79,3 +79,16 @@ exports/
 ```
 
 Si un fichier du meme nom existe deja, il est ecrase lors de la generation.
+
+## Fichiers temporaires
+
+MultiPrep cree un dossier local `temp/` a cote de l'application.
+
+```text
+temp/
++-- cache/
++-- mail_attachments/
+```
+
+Ce dossier contient les miniatures, captures collees et pieces jointes Outlook extraites temporairement.
+Il est nettoye au lancement et a la fermeture normale de l'application.

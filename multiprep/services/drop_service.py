@@ -1,44 +1,53 @@
 from __future__ import annotations
 
 import shutil
-import tempfile
 from pathlib import Path, PureWindowsPath
-from uuid import uuid4
 
 from PySide6.QtCore import QMimeData
 
+from multiprep.utils.paths import MAIL_DROP_DIR
 
-MAIL_DROP_DIR = Path(tempfile.mkdtemp(prefix="multiprep_mail_attachments_"))
+PDF_EXTENSIONS = {".pdf"}
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
+SUPPORTED_EXTENSIONS = PDF_EXTENSIONS | IMAGE_EXTENSIONS
+
+
+def has_supported_file_mime(mime_data: QMimeData) -> bool:
+    if _local_supported_paths(mime_data):
+        return True
+    return any(_is_supported_path(name) for name in _windows_attachment_names(mime_data))
+
+
+def file_paths_from_mime(mime_data: QMimeData) -> list[Path]:
+    local_paths = _local_supported_paths(mime_data)
+    if local_paths:
+        return local_paths
+    return _extract_windows_supported_attachments(mime_data)
 
 
 def has_pdf_mime(mime_data: QMimeData) -> bool:
-    if _local_pdf_paths(mime_data):
-        return True
-    return any(name.lower().endswith(".pdf") for name in _windows_attachment_names(mime_data))
+    return has_supported_file_mime(mime_data)
 
 
 def pdf_paths_from_mime(mime_data: QMimeData) -> list[Path]:
-    local_paths = _local_pdf_paths(mime_data)
-    if local_paths:
-        return local_paths
-    return _extract_windows_pdf_attachments(mime_data)
+    return file_paths_from_mime(mime_data)
 
 
 def cleanup_mail_drop_dir() -> None:
     shutil.rmtree(MAIL_DROP_DIR, ignore_errors=True)
 
 
-def _local_pdf_paths(mime_data: QMimeData) -> list[Path]:
+def _local_supported_paths(mime_data: QMimeData) -> list[Path]:
     if not mime_data.hasUrls():
         return []
     return [
         Path(url.toLocalFile())
         for url in mime_data.urls()
-        if url.isLocalFile() and url.toLocalFile().lower().endswith(".pdf")
+        if url.isLocalFile() and _is_supported_path(url.toLocalFile())
     ]
 
 
-def _extract_windows_pdf_attachments(mime_data: QMimeData) -> list[Path]:
+def _extract_windows_supported_attachments(mime_data: QMimeData) -> list[Path]:
     names = _windows_attachment_names(mime_data)
     if not names:
         return []
@@ -46,12 +55,12 @@ def _extract_windows_pdf_attachments(mime_data: QMimeData) -> list[Path]:
     MAIL_DROP_DIR.mkdir(parents=True, exist_ok=True)
     paths: list[Path] = []
     for index, name in enumerate(names):
-        if not name.lower().endswith(".pdf"):
+        if not _is_supported_path(name):
             continue
         data = _windows_file_contents(mime_data, index)
         if not data:
             continue
-        path = MAIL_DROP_DIR / f"{uuid4().hex}_{_safe_attachment_name(name)}"
+        path = _available_attachment_path(_safe_attachment_name(name))
         path.write_bytes(data)
         paths.append(path)
     return paths
@@ -60,6 +69,25 @@ def _extract_windows_pdf_attachments(mime_data: QMimeData) -> list[Path]:
 def _safe_attachment_name(name: str) -> str:
     filename = PureWindowsPath(name).name.replace("/", "_").replace("\\", "_").strip()
     return filename or "piece_jointe.pdf"
+
+
+def _available_attachment_path(filename: str) -> Path:
+    path = MAIL_DROP_DIR / filename
+    if not path.exists():
+        return path
+
+    stem = path.stem
+    suffix = path.suffix
+    counter = 1
+    while True:
+        candidate = MAIL_DROP_DIR / f"{stem} ({counter}){suffix}"
+        if not candidate.exists():
+            return candidate
+        counter += 1
+
+
+def _is_supported_path(path: str) -> bool:
+    return Path(path).suffix.lower() in SUPPORTED_EXTENSIONS
 
 
 def _windows_attachment_names(mime_data: QMimeData) -> list[str]:

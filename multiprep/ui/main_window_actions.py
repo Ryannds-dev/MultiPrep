@@ -14,19 +14,25 @@ from multiprep.utils.colors import SOURCE_COLORS
 
 class MainWindowActionsMixin:
     def choose_pdfs(self) -> None:
-        paths, _ = QFileDialog.getOpenFileNames(self, "Importer des PDF", str(Path.home()), "PDF (*.pdf)")
-        self.add_pdfs([Path(path) for path in paths])
+        paths, _ = QFileDialog.getOpenFileNames(
+            self,
+            "Importer des fichiers",
+            str(Path.home()),
+            "Fichiers supportés (*.pdf *.jpg *.jpeg *.png);;PDF (*.pdf);;Images (*.jpg *.jpeg *.png)",
+        )
+        self.add_files([Path(path) for path in paths])
 
     def add_pdfs(self, paths: list[Path]) -> None:
+        self.add_files(paths)
+
+    def add_files(self, paths: list[Path]) -> None:
         for path in paths:
-            if not path.exists() or path.suffix.lower() != ".pdf":
+            if not path.exists():
                 continue
-            source = self._new_source(path)
-            try:
-                self.pages.extend(self.pdf_service.document_pages(source))
-                self.sources.append(source)
-            except Exception as exc:
-                QMessageBox.warning(self, "Import impossible", f"{path.name}\n{exc}")
+            if path.suffix.lower() == ".pdf":
+                self._add_pdf(path)
+            elif path.suffix.lower() in {".jpg", ".jpeg", ".png"}:
+                self._add_image(path)
         self.board.set_pages(self.pages)
 
     def handle_paste(self) -> None:
@@ -124,6 +130,26 @@ class MainWindowActionsMixin:
         for offset, item in enumerate(pages):
             self.pages.insert(insert_index + offset, item)
         self.board.set_pages(self.pages)
+
+    def _add_pdf(self, path: Path) -> None:
+        source = self._new_source(path)
+        try:
+            self.pages.extend(self.pdf_service.document_pages(source))
+            self.sources.append(source)
+        except Exception as exc:
+            QMessageBox.warning(self, "Import impossible", f"{path.name}\n{exc}")
+
+    def _add_image(self, path: Path) -> None:
+        source_id = self.next_source_id
+        color = SOURCE_COLORS[(source_id - 1) % len(SOURCE_COLORS)]
+        self.next_source_id += 1
+        try:
+            page = self.pdf_service.image_page(path, source_id, color)
+        except Exception as exc:
+            QMessageBox.warning(self, "Image impossible", f"{path.name}\n{exc}")
+            return
+        self.pages.append(page)
+        self.sources.append(page.source)
 
     def _show_result(self, output_path: Path) -> None:
         self.result_page.show_output(output_path)

@@ -44,7 +44,7 @@ class EditorView(QWidget):
 
     def _toolbar(self) -> QHBoxLayout:
         top = QHBoxLayout()
-        import_button = QPushButton("Importer PDF")
+        import_button = QPushButton("Importer")
         import_button.clicked.connect(self.choose_pdfs)
         generate_button = QPushButton("Générer PDF")
         generate_button.clicked.connect(self.generate_pdf)

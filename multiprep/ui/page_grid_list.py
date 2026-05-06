@@ -5,7 +5,7 @@ from PySide6.QtGui import QDrag, QKeySequence
 from PySide6.QtWidgets import QAbstractItemView, QListView, QListWidget, QListWidgetItem, QWidget
 
 from multiprep.models.page_model import PageItem
-from multiprep.services.drop_service import has_pdf_mime, pdf_paths_from_mime
+from multiprep.services.drop_service import file_paths_from_mime, has_supported_file_mime
 from multiprep.ui.page_thumbnail import PagePlaceholderWidget, PageThumbnailWidget
 
 
@@ -42,13 +42,13 @@ class PageGridListWidget(QListWidget):
         return pages
 
     def dragEnterEvent(self, event) -> None:
-        if has_pdf_mime(event.mimeData()) or event.mimeData().hasFormat(PAGE_DRAG_MIME):
+        if has_supported_file_mime(event.mimeData()) or event.mimeData().hasFormat(PAGE_DRAG_MIME):
             event.acceptProposedAction()
             return
         super().dragEnterEvent(event)
 
     def dragMoveEvent(self, event) -> None:
-        if has_pdf_mime(event.mimeData()):
+        if has_supported_file_mime(event.mimeData()):
             event.acceptProposedAction()
             return
         if event.mimeData().hasFormat(PAGE_DRAG_MIME):
@@ -58,9 +58,9 @@ class PageGridListWidget(QListWidget):
         super().dragMoveEvent(event)
 
     def dropEvent(self, event) -> None:
-        pdfs = pdf_paths_from_mime(event.mimeData())
-        if pdfs:
-            self.pdfs_dropped.emit(pdfs)
+        files = file_paths_from_mime(event.mimeData())
+        if files:
+            self.pdfs_dropped.emit(files)
             event.acceptProposedAction()
             return
         if event.mimeData().hasFormat(PAGE_DRAG_MIME):

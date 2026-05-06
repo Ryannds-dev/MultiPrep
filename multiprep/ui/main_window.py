@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QCheckBox, QLineEdit, QMainWindow, QStackedWidget
 
 from multiprep.models.page_model import PageItem, SourceDocument
 from multiprep.services.clipboard_service import ClipboardService
-from multiprep.services.drop_service import cleanup_mail_drop_dir, has_pdf_mime, pdf_paths_from_mime
+from multiprep.services.drop_service import cleanup_mail_drop_dir, file_paths_from_mime, has_supported_file_mime
 from multiprep.services.pdf_service import PdfService
 from multiprep.services.settings_service import load_settings
 from multiprep.ui.date_widgets import DateSpin
@@ -27,6 +27,7 @@ class MultiPrepWindow(MainWindowActionsMixin, QMainWindow):
         self.resize(1180, 760)
         self.setAcceptDrops(True)
 
+        cleanup_mail_drop_dir()
         self.pdf_service = PdfService()
         self.clipboard_service = ClipboardService(self.pdf_service)
         self.pages: list[PageItem] = []
@@ -46,15 +47,15 @@ class MultiPrepWindow(MainWindowActionsMixin, QMainWindow):
         super().closeEvent(event)
 
     def dragEnterEvent(self, event) -> None:
-        if has_pdf_mime(event.mimeData()):
+        if has_supported_file_mime(event.mimeData()):
             event.acceptProposedAction()
             return
         super().dragEnterEvent(event)
 
     def dropEvent(self, event) -> None:
-        pdfs = pdf_paths_from_mime(event.mimeData())
-        if pdfs:
-            self.add_pdfs(pdfs)
+        files = file_paths_from_mime(event.mimeData())
+        if files:
+            self.add_files(files)
             event.acceptProposedAction()
             return
         super().dropEvent(event)

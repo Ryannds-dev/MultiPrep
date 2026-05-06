@@ -1216,25 +1216,101 @@
    'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
    'cook\\MultiPrep\\multiprep\\__init__.py',
    'PYMODULE'),
-  ('multiprep.app',
-   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
-   'cook\\MultiPrep\\multiprep\\app.py',
-   'PYMODULE'),
   ('multiprep.models',
    'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
-   'cook\\MultiPrep\\multiprep\\models.py',
+   'cook\\MultiPrep\\multiprep\\models\\__init__.py',
    'PYMODULE'),
-  ('multiprep.pdf_service',
+  ('multiprep.models.page_model',
    'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
-   'cook\\MultiPrep\\multiprep\\pdf_service.py',
+   'cook\\MultiPrep\\multiprep\\models\\page_model.py',
    'PYMODULE'),
-  ('multiprep.settings',
+  ('multiprep.services',
    'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
-   'cook\\MultiPrep\\multiprep\\settings.py',
+   'cook\\MultiPrep\\multiprep\\services\\__init__.py',
    'PYMODULE'),
-  ('multiprep.widgets',
+  ('multiprep.services.clipboard_service',
    'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
-   'cook\\MultiPrep\\multiprep\\widgets.py',
+   'cook\\MultiPrep\\multiprep\\services\\clipboard_service.py',
+   'PYMODULE'),
+  ('multiprep.services.drop_service',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\services\\drop_service.py',
+   'PYMODULE'),
+  ('multiprep.services.name_service',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\services\\name_service.py',
+   'PYMODULE'),
+  ('multiprep.services.pdf_service',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\services\\pdf_service.py',
+   'PYMODULE'),
+  ('multiprep.services.settings_service',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\services\\settings_service.py',
+   'PYMODULE'),
+  ('multiprep.services.thumbnail_service',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\services\\thumbnail_service.py',
+   'PYMODULE'),
+  ('multiprep.ui',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\ui\\__init__.py',
+   'PYMODULE'),
+  ('multiprep.ui.app_entry',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\ui\\app_entry.py',
+   'PYMODULE'),
+  ('multiprep.ui.date_widgets',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\ui\\date_widgets.py',
+   'PYMODULE'),
+  ('multiprep.ui.dialogs',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\ui\\dialogs.py',
+   'PYMODULE'),
+  ('multiprep.ui.editor_view',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\ui\\editor_view.py',
+   'PYMODULE'),
+  ('multiprep.ui.main_window',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\ui\\main_window.py',
+   'PYMODULE'),
+  ('multiprep.ui.main_window_actions',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\ui\\main_window_actions.py',
+   'PYMODULE'),
+  ('multiprep.ui.page_board',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\ui\\page_board.py',
+   'PYMODULE'),
+  ('multiprep.ui.page_grid_list',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\ui\\page_grid_list.py',
+   'PYMODULE'),
+  ('multiprep.ui.page_thumbnail',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\ui\\page_thumbnail.py',
+   'PYMODULE'),
+  ('multiprep.ui.result_view',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\ui\\result_view.py',
+   'PYMODULE'),
+  ('multiprep.ui.styles',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\ui\\styles.py',
+   'PYMODULE'),
+  ('multiprep.utils',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\utils\\__init__.py',
+   'PYMODULE'),
+  ('multiprep.utils.colors',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\utils\\colors.py',
+   'PYMODULE'),
+  ('multiprep.utils.paths',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\utils\\paths.py',
    'PYMODULE'),
   ('multiprocessing',
    'C:\\Users\\rdsch\\AppData\\Local\\Programs\\Python\\Python310\\lib\\multiprocessing\\__init__.py',
