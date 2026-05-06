@@ -1288,6 +1288,10 @@
    'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
    'cook\\MultiPrep\\multiprep\\ui\\page_grid_list.py',
    'PYMODULE'),
+  ('multiprep.ui.page_preview',
+   'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
+   'cook\\MultiPrep\\multiprep\\ui\\page_preview.py',
+   'PYMODULE'),
   ('multiprep.ui.page_thumbnail',
    'E:\\RYANN ADMINISTATIF VACANCES 2025\\rav\\Service civique '
    'cook\\MultiPrep\\multiprep\\ui\\page_thumbnail.py',

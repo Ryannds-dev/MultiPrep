@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QPoint, Signal
+from PySide6.QtCore import QPoint, Qt, Signal
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QListWidgetItem, QMenu, QVBoxLayout, QWidget
 
@@ -16,6 +16,7 @@ class PageBoard(QWidget):
     delete_all_requested = Signal()
     pdfs_dropped = Signal(list)
     paste_requested = Signal()
+    selected_page_changed = Signal(object)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -30,6 +31,7 @@ class PageBoard(QWidget):
     def set_pages(self, pages: list[PageItem]) -> None:
         self.pages = pages
         self.list_widget.set_pages(pages)
+        self.selected_page_changed.emit(None)
 
     def selected_indexes(self) -> list[int]:
         return sorted(self.list_widget.row(item) for item in self.list_widget.selectedItems())
@@ -58,6 +60,7 @@ class PageBoard(QWidget):
         self.order_changed.emit(pages)
 
     def _sync_selection_styles(self) -> None:
+        selected_page = None
         for row in range(self.list_widget.count()):
             item = self.list_widget.item(row)
             if item.data(PLACEHOLDER_ROLE):
@@ -65,6 +68,9 @@ class PageBoard(QWidget):
             widget = self.list_widget.itemWidget(item)
             if isinstance(widget, PageThumbnailWidget):
                 widget.set_selected(item.isSelected())
+            if selected_page is None and item.isSelected():
+                selected_page = item.data(Qt.ItemDataRole.UserRole)
+        self.selected_page_changed.emit(selected_page)
 
     def _open_context_menu(self, position: QPoint) -> None:
         item = self.list_widget.itemAt(position)

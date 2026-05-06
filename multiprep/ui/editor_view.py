@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSplitter, QVBoxLayout, QWidget
 
 from multiprep.ui.date_widgets import DateSpin
 from multiprep.ui.page_board import PageBoard
+from multiprep.ui.page_preview import PagePreviewPanel
 
 
 class EditorView(QWidget):
@@ -40,7 +42,16 @@ class EditorView(QWidget):
         layout.setSpacing(12)
         layout.addLayout(self._toolbar())
         layout.addWidget(self._paste_hint())
-        layout.addWidget(self.board, 1)
+        self.preview = PagePreviewPanel()
+        self.board.selected_page_changed.connect(self.preview.set_page)
+        self.content_splitter = QSplitter(Qt.Orientation.Horizontal)
+        self.content_splitter.setChildrenCollapsible(False)
+        self.content_splitter.addWidget(self.board)
+        self.content_splitter.addWidget(self.preview)
+        self.content_splitter.setStretchFactor(0, 3)
+        self.content_splitter.setStretchFactor(1, 2)
+        self.content_splitter.setSizes([720, 520])
+        layout.addWidget(self.content_splitter, 1)
 
     def _toolbar(self) -> QHBoxLayout:
         top = QHBoxLayout()
