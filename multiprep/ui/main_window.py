@@ -109,6 +109,7 @@ class MultiPrepWindow(MainWindowActionsMixin, QMainWindow):
         board.delete_pages_requested.connect(self.delete_pages)
         board.delete_all_requested.connect(self.delete_all_pages)
         board.paste_requested.connect(self.handle_paste)
+        board.rotate_pages_requested.connect(self.rotate_pages)
         return board
 
     def _spin(self, minimum: int, maximum: int, value: int) -> DateSpin:

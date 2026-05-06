@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import shutil
+from copy import copy
 from pathlib import Path
 from typing import Sequence
 
@@ -95,7 +96,10 @@ class PdfService:
             if reader is None:
                 reader = PdfReader(str(item.source.path))
                 readers[item.source.path] = reader
-            writer.add_page(reader.pages[item.page_index])
+            page = copy(reader.pages[item.page_index])
+            if item.rotation % 360:
+                page.rotate(item.rotation % 360)
+            writer.add_page(page)
 
         with output_path.open("wb") as handle:
             writer.write(handle)

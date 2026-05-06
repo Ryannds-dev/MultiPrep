@@ -17,6 +17,7 @@ class PageBoard(QWidget):
     pdfs_dropped = Signal(list)
     paste_requested = Signal()
     selected_page_changed = Signal(object)
+    rotate_pages_requested = Signal(list, int)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -38,6 +39,13 @@ class PageBoard(QWidget):
 
     def clear_selection(self) -> None:
         self.list_widget.clearSelection()
+
+    def select_indexes(self, indexes: list[int]) -> None:
+        self.list_widget.clearSelection()
+        for index in indexes:
+            item = self.list_widget.item(index)
+            if item:
+                item.setSelected(True)
 
     def delete_selection(self) -> None:
         if self.list_widget.selectedItems():
@@ -95,6 +103,12 @@ class PageBoard(QWidget):
             )
             delete_action.triggered.connect(self.delete_selection)
             menu.addAction(delete_action)
+            rotate_left_action = QAction("Tourner à gauche", self)
+            rotate_left_action.triggered.connect(lambda: self.rotate_pages_requested.emit(self.selected_indexes(), -90))
+            rotate_right_action = QAction("Tourner à droite", self)
+            rotate_right_action.triggered.connect(lambda: self.rotate_pages_requested.emit(self.selected_indexes(), 90))
+            menu.addAction(rotate_left_action)
+            menu.addAction(rotate_right_action)
             row = self.list_widget.row(item)
             before_action = QAction("Ajouter un separateur avant", self)
             before_action.triggered.connect(lambda: self.separator_requested.emit(row))

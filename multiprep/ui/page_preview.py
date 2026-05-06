@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import fitz
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QPixmap, QTransform
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QSizePolicy, QToolButton, QVBoxLayout, QWidget
 
 from multiprep.models.page_model import PageItem
@@ -95,6 +95,8 @@ class PagePreviewPanel(QFrame):
                 pixmap = pdf_page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
                 preview = QPixmap()
                 if preview.loadFromData(pixmap.tobytes("png")):
+                    if page.rotation % 360:
+                        preview = preview.transformed(QTransform().rotate(page.rotation % 360))
                     return preview
         except Exception:
             pass

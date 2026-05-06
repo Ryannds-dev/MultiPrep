@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QPixmap
+from PySide6.QtGui import QColor, QPixmap, QTransform
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 
 from multiprep.models.page_model import PageItem
@@ -34,7 +34,7 @@ class PageThumbnailWidget(QFrame):
 
         image = QLabel()
         pixmap = QPixmap(str(item.thumbnail_path))
-        image.setPixmap(pixmap.scaled(TITLE_WIDTH, IMAGE_HEIGHT, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+        image.setPixmap(self._scaled_pixmap(pixmap))
         image.setAlignment(Qt.AlignmentFlag.AlignCenter)
         image.setFixedSize(TITLE_WIDTH, IMAGE_HEIGHT)
         image.setStyleSheet("background: #ffffff; border-radius: 3px;")
@@ -51,6 +51,16 @@ class PageThumbnailWidget(QFrame):
 
     def set_selected(self, selected: bool) -> None:
         self.setStyleSheet(self._style(selected))
+
+    def _scaled_pixmap(self, pixmap: QPixmap) -> QPixmap:
+        if self.item.rotation % 360:
+            pixmap = pixmap.transformed(QTransform().rotate(self.item.rotation % 360))
+        return pixmap.scaled(
+            TITLE_WIDTH,
+            IMAGE_HEIGHT,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
 
     def _title(self, item: PageItem, number: int) -> str:
         if item.page_type == "capture":

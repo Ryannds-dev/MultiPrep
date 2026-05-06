@@ -77,6 +77,13 @@ class MainWindowActionsMixin:
             self.board.clear_selection()
             self.board.set_pages(self.pages)
 
+    def rotate_pages(self, page_indexes: list[int], degrees: int) -> None:
+        valid_indexes = sorted({i for i in page_indexes if 0 <= i < len(self.pages)})
+        for index in valid_indexes:
+            self.pages[index].rotation = (self.pages[index].rotation + degrees) % 360
+        self.board.set_pages(self.pages)
+        self.board.select_indexes(valid_indexes)
+
     def open_separator_dialog(self, insert_index: int) -> None:
         options = self.pdf_service.separators(self.separator_folder)
         if not options:

@@ -31,6 +31,7 @@ class PageItem:
     label: str
     is_separator: bool = False
     page_type: str = "page"
+    rotation: int = 0
 
     @property
     def display_name(self) -> str:
