@@ -30,7 +30,7 @@ Ce choix garde une implementation robuste PySide6 avec selection multiple, ghost
 
 Fichiers a lire en premier :
 
-- `main.py` : lance l'application.
+- `run.py` : lance l'application.
 - `multiprep/ui/main_window.py` : initialise la fenetre principale.
 - `multiprep/ui/main_window_actions.py` : actions utilisateur principales.
 - `multiprep/ui/page_board.py` : conteneur de la grille et menu clic droit.
@@ -46,7 +46,7 @@ Dossiers :
 
 ## Installation
 
-Prerequis : Python 3.11 ou plus recent.
+Prerequis : Python 3.10 ou plus recent.
 
 ```powershell
 python -m venv .venv
@@ -57,7 +57,7 @@ pip install -r requirements.txt
 ## Lancement
 
 ```powershell
-python main.py
+python run.py
 ```
 
 ## Separateurs
