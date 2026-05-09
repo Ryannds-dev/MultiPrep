@@ -25,14 +25,6 @@ def file_paths_from_mime(mime_data: QMimeData) -> list[Path]:
     return _extract_windows_supported_attachments(mime_data)
 
 
-def has_pdf_mime(mime_data: QMimeData) -> bool:
-    return has_supported_file_mime(mime_data)
-
-
-def pdf_paths_from_mime(mime_data: QMimeData) -> list[Path]:
-    return file_paths_from_mime(mime_data)
-
-
 def cleanup_mail_drop_dir() -> None:
     shutil.rmtree(MAIL_DROP_DIR, ignore_errors=True)
 

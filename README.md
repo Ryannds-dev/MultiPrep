@@ -44,19 +44,9 @@ Dossiers :
 - `multiprep/models/` : donnees partagees.
 - `multiprep/utils/` : chemins et constantes utilitaires.
 
-## Documentation technique
-
-Une documentation web locale plus detaillee est disponible dans :
-
-```text
-docs_multifile_compact.html
-```
-
-Ouvrez ce fichier dans un navigateur pour obtenir une presentation interactive de l'arborescence, des fichiers Python importants, des imports, des classes, des fonctions et du fonctionnement global de MultiPrep.
-
 ## Installation
 
-Prerequis : Python 3.10 ou plus recent.
+Prerequis : Python 3.11 ou plus recent.
 
 ```powershell
 python -m venv .venv

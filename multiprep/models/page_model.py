@@ -16,7 +16,7 @@ class SourceDocument:
     def display_name(self) -> str:
         if self.display_name_override:
             return self.display_name_override
-        return _display_filename(self.path.name)
+        return self.path.name
 
     @property
     def display_stem(self) -> str:
@@ -50,12 +50,3 @@ class SeparatorOption:
     path: Path
     page_count: int
     preview_path: Optional[Path] = None
-
-
-def _display_filename(filename: str) -> str:
-    uuid_prefix_length = 32
-    if len(filename) > uuid_prefix_length + 1 and filename[uuid_prefix_length] == "_":
-        prefix = filename[:uuid_prefix_length]
-        if all(char in "0123456789abcdefABCDEF" for char in prefix):
-            return filename[uuid_prefix_length + 1:]
-    return filename

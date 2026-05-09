@@ -12,8 +12,6 @@ from multiprep.models.page_model import PageItem, SeparatorOption, SourceDocumen
 from multiprep.services.thumbnail_service import render_thumbnail
 from multiprep.utils.paths import CACHE_DIR
 
-IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
-
 
 class PdfService:
     def __init__(self, cache_dir: Path | None = None) -> None:
