@@ -25,6 +25,7 @@ Application desktop Windows en Python/PySide6 pour preparer un PDF final a parti
 
 La grille de pages utilise `QListWidget` en `IconMode` avec un drag interne personnalise.
 Ce choix garde une implementation robuste PySide6 avec selection multiple, ghost de drag, placeholder de position cible pendant le mouvement, restauration si le drag est annule et recuperation de l'ordre final via `get_ordered_pages()`.
+Pour garder le deplacement fluide, la grille ne reconstruit pas toutes les miniatures au debut du drag : elle retire uniquement les pages selectionnees, deplace un placeholder, puis reconstruit l'affichage final une seule fois au drop.
 
 ## Structure du code
 

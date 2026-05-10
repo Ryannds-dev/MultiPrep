@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from PySide6.QtCore import QByteArray, QMimeData, QPoint, QSize, Qt, Signal
 from PySide6.QtGui import QDrag, QKeySequence
 from PySide6.QtWidgets import QAbstractItemView, QListView, QListWidget, QListWidgetItem, QWidget
@@ -29,9 +31,7 @@ class PageGridListWidget(QListWidget):
         self._configure()
 
     def set_pages(self, pages: list[PageItem]) -> None:
-        self.clear()
-        for index, page in enumerate(pages):
-            self._add_page_item(page, index + 1)
+        self._rebuild_items(pages)
 
     def get_ordered_pages(self) -> list[PageItem]:
         pages: list[PageItem] = []
@@ -76,9 +76,8 @@ class PageGridListWidget(QListWidget):
             return
         self._drag_original_pages = self.get_ordered_pages()
         self._drag_pages = [self._drag_original_pages[row] for row in rows]
-        selected = set(rows)
-        remaining = [page for index, page in enumerate(self._drag_original_pages) if index not in selected]
-        self._render_with_placeholder(remaining, min(rows))
+        self._remove_rows(rows)
+        self._insert_placeholder(min(rows))
 
         drag = QDrag(self)
         mime = QMimeData()
@@ -105,6 +104,7 @@ class PageGridListWidget(QListWidget):
         self.setFlow(QListView.Flow.LeftToRight)
         self.setWrapping(True)
         self.setMovement(QListView.Movement.Snap)
+        self.setUniformItemSizes(True)
         self.setDragEnabled(True)
         self.setAcceptDrops(True)
         self.setDropIndicatorShown(True)
@@ -134,14 +134,19 @@ class PageGridListWidget(QListWidget):
         self.setItemWidget(item, PagePlaceholderWidget(len(self._drag_pages)))
         self._placeholder_item = item
 
-    def _render_with_placeholder(self, pages: list[PageItem], placeholder_index: int) -> None:
-        self.clear()
-        placeholder_index = max(0, min(placeholder_index, len(pages)))
-        for index in range(len(pages) + 1):
-            if index == placeholder_index:
-                self._insert_placeholder(index)
-            if index < len(pages):
-                self._add_page_item(pages[index], index + 1)
+    def _remove_rows(self, rows: list[int]) -> None:
+        def remove() -> None:
+            for row in reversed(rows):
+                item = self.item(row)
+                if item is None:
+                    continue
+                widget = self.itemWidget(item)
+                if widget is not None:
+                    self.removeItemWidget(item)
+                    widget.deleteLater()
+                self.takeItem(row)
+
+        self._batch_update(remove)
 
     def _target_index_at(self, position: QPoint) -> int:
         item = self.itemAt(position)
@@ -193,3 +198,25 @@ class PageGridListWidget(QListWidget):
         pixmap = widget.grab()
         drag.setPixmap(pixmap)
         drag.setHotSpot(QPoint(pixmap.width() // 2, pixmap.height() // 2))
+
+    def _rebuild_items(self, pages: list[PageItem]) -> None:
+        def render() -> None:
+            self.clear()
+            for index, page in enumerate(pages):
+                self._add_page_item(page, index + 1)
+
+        self._batch_update(render)
+
+    def _batch_update(self, callback: Callable[[], None]) -> None:
+        previous_updates = self.updatesEnabled()
+        previous_viewport_updates = self.viewport().updatesEnabled()
+        previous_signals = self.blockSignals(True)
+        self.setUpdatesEnabled(False)
+        self.viewport().setUpdatesEnabled(False)
+        try:
+            callback()
+        finally:
+            self.viewport().setUpdatesEnabled(previous_viewport_updates)
+            self.setUpdatesEnabled(previous_updates)
+            self.blockSignals(previous_signals)
+            self.viewport().update()

@@ -64,7 +64,6 @@ class PageBoard(QWidget):
 
     def _apply_order(self, pages: list[PageItem]) -> None:
         self.pages = pages
-        self.list_widget.set_pages(pages)
         self.order_changed.emit(pages)
 
     def _sync_selection_styles(self) -> None:
