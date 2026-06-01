@@ -2,6 +2,8 @@
 
 Application desktop Windows en Python/PySide6 pour preparer un PDF final a partir de plusieurs PDF importes.
 
+Version actuelle : `v1.1.1`.
+
 ## Fonctionnalites V1
 
 - Import de PDF, JPG et PNG par bouton ou glisser-deposer.
@@ -48,6 +50,13 @@ Dossiers :
 ## Installation
 
 Prerequis : Python 3.11 ou plus recent.
+
+Les versions de `PyMuPDF` et `pypdf` sont epinglees dans `requirements.txt` afin de rendre les installations reproductibles :
+
+```text
+PyMuPDF==1.26.7
+pypdf==6.10.2
+```
 
 ```powershell
 python -m venv .venv
