@@ -49,7 +49,7 @@ Dossiers :
 
 ## Installation
 
-Prerequis : Python 3.11 ou plus recent.
+Prerequis : Python 3.10 ou plus recent.
 
 Les versions de `PyMuPDF` et `pypdf` sont epinglees dans `requirements.txt` afin de rendre les installations reproductibles :
 
