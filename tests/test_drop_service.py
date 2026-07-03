@@ -32,6 +32,15 @@ class DropServiceTests(unittest.TestCase):
         self.assertTrue(drop_service.has_supported_file_mime(mime))
         self.assertEqual(drop_service.file_paths_from_mime(mime), [path])
 
+    def test_local_word_file_is_supported(self) -> None:
+        path = Path(self.temp_dir.name) / "document.docx"
+        path.write_bytes(b"docx")
+        mime = QMimeData()
+        mime.setUrls([QUrl.fromLocalFile(str(path))])
+
+        self.assertTrue(drop_service.has_supported_file_mime(mime))
+        self.assertEqual(drop_service.file_paths_from_mime(mime), [path])
+
     def test_qt_image_drop_is_saved_as_png(self) -> None:
         mime = QMimeData()
         image = QImage(3, 2, QImage.Format.Format_RGB32)
@@ -57,7 +66,7 @@ class DropServiceTests(unittest.TestCase):
         self.assertEqual(len(paths), 1)
         self.assertFalse(QImage(str(paths[0])).isNull())
 
-    def test_chromium_download_url_uses_virtual_file_contents(self) -> None:
+    def test_browser_download_url_uses_virtual_file_contents(self) -> None:
         mime = QMimeData()
         mime.setData(
             'application/x-qt-windows-mime;value="DownloadURL"',

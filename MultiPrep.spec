@@ -5,7 +5,12 @@ a = Analysis(
     ['run.py'],
     pathex=[],
     binaries=[],
-    datas=[('assets/multiprep-logo.ico', 'assets')],
+    datas=[
+        ('assets/multiprep-logo-2.ico', 'assets'),
+        ('assets/multiprep-logo-2.png', 'assets'),
+        ('assets/multiprep-logo-classic.png', 'assets'),
+        ('assets/GmailDropHelper.exe', 'assets'),
+    ],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,5 +40,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['assets\\multiprep-logo.ico'],
+    icon=['assets\\multiprep-logo-2.ico'],
 )

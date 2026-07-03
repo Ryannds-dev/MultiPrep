@@ -4,7 +4,9 @@ import sys
 from pathlib import Path
 
 
-APP_ICON_PATH = Path("assets") / "multiprep-logo.ico"
+APP_ICON_PATH = Path("assets") / "multiprep-logo-2.ico"
+APP_LOGO_PATH = Path("assets") / "multiprep-logo-2.png"
+CLASSIC_LOGO_PATH = Path("assets") / "multiprep-logo-classic.png"
 SEPARATORS_DIR = Path("separateurs")
 EXPORTS_DIR = Path("exports")
 SETTINGS_FILE = Path("settings.json")

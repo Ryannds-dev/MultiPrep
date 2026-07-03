@@ -2,6 +2,43 @@
 
 Ce document explique les commits du projet dans l’ordre chronologique. Il précise le besoin ou le problème rencontré, la solution apportée et son effet concret.
 
+## 3 juillet 2026 — MultiPrep 2.0.0, Google Workspace et performances
+
+### Passage de la version Outlook à la version Google Workspace
+
+- **Besoin :** utiliser principalement MultiPrep avec Gmail dans un navigateur, alors que le glisser-déposer historique avait été conçu pour Outlook bureau.
+- **Difficulté :** Gmail transmet certaines pièces jointes comme des objets virtuels Windows et non comme des chemins de fichiers. Qt ne sait pas toujours terminer seul le transfert asynchrone fourni par le navigateur.
+- **Solution :** ajout d’un composant Windows natif intégré directement dans la grande zone de MultiPrep. Il récupère les flux virtuels du navigateur, les copie dans le dossier temporaire puis les remet au moteur d’import existant.
+- **Résultat :** les PDF, images et documents Word provenant de Gmail peuvent être déposés dans MultiPrep sans fenêtre d’import séparée. Le composant reste disponible en arrière-plan et se réactive pour plusieurs imports successifs.
+
+### Collage des images présentes dans le corps d’un mail
+
+- **Problème réglé :** la couche native Gmail interceptait `Ctrl+V` et le clic droit avant l’interface Qt ; de plus, Gmail peut copier une image sous forme de bitmap, de HTML, de données Base64 ou d’URL.
+- **Solution :** gestion de `Ctrl+V` et du menu **Coller** dans les deux couches de l’application, avec lecture des formats image Windows/Qt, HTML, Base64 et URL distante.
+- **Résultat :** une image copiée depuis le corps d’un message Gmail peut être ajoutée au montage, que la grille soit vide ou contienne déjà des pages.
+
+### Import Word et identité MultiPrep 2.0.0
+
+- **Besoin :** accepter les documents `.doc` et `.docx` en plus des PDF et images.
+- **Solution :** conversion locale via Microsoft Word en conservant la mise en page, puis intégration du PDF produit dans le même flux que les autres documents.
+- **Résultat :** les documents Word sont importables par le bouton, le glisser-déposer local ou Gmail.
+- **Identité visuelle :** création du mode Gmail blanc/jaune actif par défaut, conservation du mode classique bleu, logos distincts et version applicative portée à `2.0.0`.
+
+### Refonte complète des performances d’import
+
+- **Problème réglé :** chaque page créait auparavant un widget Qt complet et sa miniature était calculée pendant le chargement. Le temps, la mémoire et les ralentissements augmentaient fortement avec le nombre de pages.
+- **Première difficulté :** déplacer uniquement le calcul des miniatures dans un thread rendait la fenêtre plus réactive, mais la création de centaines de widgets restait coûteuse.
+- **Solution finale :**
+  - création immédiate des modèles de pages sans calculer leurs aperçus ;
+  - remplacement des widgets individuels par un delegate graphique léger qui dessine les cartes à la demande ;
+  - calcul des miniatures hors du thread graphique, par lots et avec jusqu’à quatre traitements parallèles ;
+  - ouverture groupée des PDF afin de ne pas rouvrir le même document pour chaque page ;
+  - ajout incrémental des nouvelles pages sans reconstruire toute la grille ;
+  - suppression des parcours complets de la grille lors d’une sélection ou d’un changement de thème ;
+  - génération différée des miniatures des images collées/importées.
+- **Mesures de validation :** environ 10 à 12 ms pour injecter 500 pages dans la grille et environ 0,63 seconde pour générer 120 miniatures sur le poste de développement.
+- **Résultat :** les modes classique et Gmail partagent désormais le même moteur rapide ; l’interface reste utilisable pendant la production des aperçus.
+
 ## 2 mai 2026 — Création du socle
 
 ### `44e43b0` — Ajout du flux d’assemblage PDF et normalisation des noms
@@ -151,3 +188,11 @@ Ce document explique les commits du projet dans l’ordre chronologique. Il pré
 - Les commits `docs` modifient la documentation.
 - Les commits `build` reconstruisent ou complètent la version Windows distribuée.
 - Les commits `chore` effectuent un entretien technique.
+
+## Évolution préparée — MultiPrep 2.0.0
+
+- **Changement de flux :** le mode Gmail devient le mode de démarrage et présente directement les deux parcours adaptés à Google Workspace : dépôt des pièces jointes et collage des images présentes dans le corps du message.
+- **Compatibilité :** une zone Windows native gère le transfert asynchrone utilisé par Microsoft Edge et les navigateurs compatibles pour les pièces jointes Gmail.
+- **Mode classique :** un bouton dans l’en-tête permet de retrouver instantanément l’interface et le parcours d’import traditionnels.
+- **Nouvelle identité :** palette blanc chaud et jaune doré, composants visuels modernisés et nouveau logo MP conservant le symbole historique des documents assemblés.
+- **Formats :** ajout de l’import Word `.doc` et `.docx`, converti en PDF par Microsoft Word avant intégration au montage.

@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox
 from multiprep.models.page_model import PageItem, SourceDocument
 from multiprep.services.name_service import build_output_filename, normalize_name_part
 from multiprep.services.settings_service import save_last_date
+from multiprep.services.word_service import WORD_EXTENSIONS, convert_word_to_pdf
 from multiprep.ui.dialogs import SeparatorDialog
 from multiprep.utils.colors import SOURCE_COLORS
 
@@ -18,7 +19,10 @@ class MainWindowActionsMixin:
             self,
             "Importer des fichiers",
             str(Path.home()),
-            "Fichiers supportés (*.pdf *.jpg *.jpeg *.png);;PDF (*.pdf);;Images (*.jpg *.jpeg *.png)",
+            (
+                "Fichiers supportés (*.pdf *.doc *.docx *.jpg *.jpeg *.png);;"
+                "PDF (*.pdf);;Documents Word (*.doc *.docx);;Images (*.jpg *.jpeg *.png)"
+            ),
         )
         self.add_files([Path(path) for path in paths])
 
@@ -26,31 +30,36 @@ class MainWindowActionsMixin:
         self.add_files(paths)
 
     def add_files(self, paths: list[Path]) -> None:
+        previous_count = len(self.pages)
         for path in paths:
             if not path.exists():
                 continue
             if path.suffix.lower() == ".pdf":
                 self._add_pdf(path)
+            elif path.suffix.lower() in WORD_EXTENSIONS:
+                self._add_word(path)
             elif path.suffix.lower() in {".jpg", ".jpeg", ".png"}:
                 self._add_image(path)
-        self.board.set_pages(self.pages)
+        new_pages = self.pages[previous_count:]
+        if self.board.list_widget.count() == previous_count:
+            self.board.append_pages(new_pages)
+        else:
+            self.board.set_pages(self.pages)
+        self.refresh_gmail_drop_target()
 
     def handle_paste(self) -> None:
-        if not self.clipboard_service.has_image():
-            QMessageBox.information(self, "Coller", "Aucune image a coller")
-            return
         color = SOURCE_COLORS[(self.next_source_id - 1) % len(SOURCE_COLORS)]
         source_id = self.next_source_id
-        self.next_source_id += 1
         page = self.clipboard_service.paste_image_as_page(source_id, color)
         if page is None:
-            QMessageBox.warning(self, "Coller", "Impossible de lire l'image du presse-papier.")
+            QMessageBox.warning(self, "Coller", "Aucune image lisible dans le presse-papiers.")
             return
+        self.next_source_id += 1
         self.pages.append(page)
         self.sources.append(page.source)
-        self.board.set_pages(self.pages)
+        self.board.append_pages([page])
         self.board.list_widget.setCurrentRow(len(self.pages) - 1)
-        self.statusBar().showMessage("Capture ajoutee", 2500)
+        self.statusBar().showMessage("Image ajoutée", 2500)
 
     def set_page_order(self, pages: list[PageItem]) -> None:
         self.pages = pages
@@ -61,6 +70,7 @@ class MainWindowActionsMixin:
             self.pages.pop(index)
         self.board.clear_selection()
         self.board.set_pages(self.pages)
+        self.refresh_gmail_drop_target()
 
     def delete_all_pages(self) -> None:
         if not self.pages:
@@ -76,6 +86,7 @@ class MainWindowActionsMixin:
             self.pages.clear()
             self.board.clear_selection()
             self.board.set_pages(self.pages)
+            self.refresh_gmail_drop_target()
 
     def rotate_pages(self, page_indexes: list[int], degrees: int) -> None:
         valid_indexes = sorted({i for i in page_indexes if 0 <= i < len(self.pages)})
@@ -126,6 +137,7 @@ class MainWindowActionsMixin:
         self.suffix_check.setChecked(True)
         self.board.set_pages(self.pages)
         self.stack.setCurrentWidget(self.editor_page)
+        self.refresh_gmail_drop_target()
 
     def _insert_separator_pages(self, path: Path, insert_index: int) -> None:
         source = self._new_source(path, color="#64748b")
@@ -145,6 +157,19 @@ class MainWindowActionsMixin:
             self.sources.append(source)
         except Exception as exc:
             QMessageBox.warning(self, "Import impossible", f"{path.name}\n{exc}")
+
+    def _add_word(self, path: Path) -> None:
+        source_id = self.next_source_id
+        color = SOURCE_COLORS[(source_id - 1) % len(SOURCE_COLORS)]
+        self.next_source_id += 1
+        pdf_path = self.pdf_service.cache_dir / f"word_{source_id}.pdf"
+        try:
+            convert_word_to_pdf(path, pdf_path)
+            source = SourceDocument(source_id, pdf_path, color, path.name)
+            self.pages.extend(self.pdf_service.document_pages(source))
+            self.sources.append(source)
+        except Exception as exc:
+            QMessageBox.warning(self, "Import Word impossible", f"{path.name}\n{exc}")
 
     def _add_image(self, path: Path) -> None:
         source_id = self.next_source_id

@@ -6,7 +6,6 @@ from PySide6.QtWidgets import QListWidgetItem, QMenu, QVBoxLayout, QWidget
 
 from multiprep.models.page_model import PageItem
 from multiprep.ui.page_grid_list import PLACEHOLDER_ROLE, PageGridListWidget
-from multiprep.ui.page_thumbnail import PageThumbnailWidget
 
 
 class PageBoard(QWidget):
@@ -18,6 +17,7 @@ class PageBoard(QWidget):
     paste_requested = Signal()
     selected_page_changed = Signal(object)
     rotate_pages_requested = Signal(list, int)
+    browser_drop_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -33,6 +33,11 @@ class PageBoard(QWidget):
         self.pages = pages
         self.list_widget.set_pages(pages)
         self.selected_page_changed.emit(None)
+
+    def append_pages(self, pages: list[PageItem]) -> None:
+        if not pages:
+            return
+        self.list_widget.append_pages(pages)
 
     def selected_indexes(self) -> list[int]:
         return sorted(self.list_widget.row(item) for item in self.list_widget.selectedItems())
@@ -54,6 +59,9 @@ class PageBoard(QWidget):
     def get_ordered_pages(self) -> list[PageItem]:
         return self.list_widget.get_ordered_pages()
 
+    def refresh_theme(self) -> None:
+        self.list_widget.viewport().update()
+
     def _connect_list(self) -> None:
         self.list_widget.pdfs_dropped.connect(self.pdfs_dropped.emit)
         self.list_widget.order_changed.connect(self._apply_order)
@@ -61,22 +69,20 @@ class PageBoard(QWidget):
         self.list_widget.paste_requested.connect(self.paste_requested.emit)
         self.list_widget.itemSelectionChanged.connect(self._sync_selection_styles)
         self.list_widget.customContextMenuRequested.connect(self._open_context_menu)
+        self.list_widget.browser_drop_requested.connect(self.browser_drop_requested.emit)
 
     def _apply_order(self, pages: list[PageItem]) -> None:
         self.pages = pages
         self.order_changed.emit(pages)
 
     def _sync_selection_styles(self) -> None:
-        selected_page = None
-        for row in range(self.list_widget.count()):
-            item = self.list_widget.item(row)
-            if item.data(PLACEHOLDER_ROLE):
-                continue
-            widget = self.list_widget.itemWidget(item)
-            if isinstance(widget, PageThumbnailWidget):
-                widget.set_selected(item.isSelected())
-            if selected_page is None and item.isSelected():
-                selected_page = item.data(Qt.ItemDataRole.UserRole)
+        selected_items = self.list_widget.selectedItems()
+        selected_page = (
+            selected_items[0].data(Qt.ItemDataRole.UserRole)
+            if selected_items
+            else None
+        )
+        self.list_widget.viewport().update()
         self.selected_page_changed.emit(selected_page)
 
     def _open_context_menu(self, position: QPoint) -> None:

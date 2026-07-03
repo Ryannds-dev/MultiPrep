@@ -17,7 +17,7 @@ class PagePreviewPanel(QFrame):
         self._pixmap: QPixmap | None = None
         self.setMinimumWidth(420)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.setStyleSheet(self._style())
+        self.apply_theme(True)
         self._build()
 
     def set_page(self, page: PageItem | None) -> None:
@@ -114,3 +114,18 @@ class PagePreviewPanel(QFrame):
             background: transparent;
         }
         """
+
+    def apply_theme(self, gmail_mode: bool) -> None:
+        if gmail_mode:
+            self.setStyleSheet(
+                """
+                PagePreviewPanel {
+                    background: #ffffff;
+                    border: 1px solid #eadfbf;
+                    border-radius: 10px;
+                }
+                PagePreviewPanel QLabel { color: #202124; background: transparent; }
+                """
+            )
+        else:
+            self.setStyleSheet(self._style())

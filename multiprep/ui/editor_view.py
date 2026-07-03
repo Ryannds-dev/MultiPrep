@@ -3,11 +3,23 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSplitter, QVBoxLayout, QWidget
+from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
 
 from multiprep.ui.date_widgets import DateSpin
 from multiprep.ui.page_board import PageBoard
 from multiprep.ui.page_preview import PagePreviewPanel
+from multiprep.utils.paths import APP_LOGO_PATH, CLASSIC_LOGO_PATH, resource_path
 
 
 class EditorView(QWidget):
@@ -22,6 +34,7 @@ class EditorView(QWidget):
         board: PageBoard,
         choose_pdfs: Callable[[], None],
         generate_pdf: Callable[[], None],
+        mode_changed: Callable[[bool], None],
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -34,14 +47,21 @@ class EditorView(QWidget):
         self.board = board
         self.choose_pdfs = choose_pdfs
         self.generate_pdf = generate_pdf
+        self.mode_changed = mode_changed
+        self.gmail_mode = True
         self._build()
 
     def _build(self) -> None:
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(12)
+        layout.addWidget(self._brand_header())
         layout.addLayout(self._toolbar())
-        layout.addWidget(self._paste_hint())
+        self.gmail_guide = self._gmail_guide()
+        layout.addWidget(self.gmail_guide)
+        self.classic_guide = self._classic_guide()
+        layout.addWidget(self.classic_guide)
+
         self.preview = PagePreviewPanel()
         self.board.selected_page_changed.connect(self.preview.set_page)
         self.content_splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -52,21 +72,103 @@ class EditorView(QWidget):
         self.content_splitter.setStretchFactor(1, 2)
         self.content_splitter.setSizes([720, 520])
         layout.addWidget(self.content_splitter, 1)
+        self.set_gmail_mode(True)
+
+    def _brand_header(self) -> QFrame:
+        header = QFrame()
+        header.setObjectName("BrandHeader")
+        layout = QHBoxLayout(header)
+        layout.setContentsMargins(16, 10, 16, 10)
+
+        self.logo = QLabel()
+        self.logo.setFixedSize(58, 58)
+        layout.addWidget(self.logo)
+
+        titles = QVBoxLayout()
+        title = QLabel("MultiPrep")
+        title.setObjectName("BrandTitle")
+        self.version_label = QLabel()
+        self.version_label.setObjectName("BrandVersion")
+        titles.addWidget(title)
+        titles.addWidget(self.version_label)
+        layout.addLayout(titles)
+        layout.addStretch()
+
+        self.mode_button = QPushButton()
+        self.mode_button.setObjectName("ModeButton")
+        self.mode_button.clicked.connect(self._toggle_mode)
+        layout.addWidget(self.mode_button)
+        return header
 
     def _toolbar(self) -> QHBoxLayout:
         top = QHBoxLayout()
-        import_button = QPushButton("Importer")
-        import_button.clicked.connect(self.choose_pdfs)
+        self.import_button = QPushButton("Importer des fichiers")
+        self.import_button.setObjectName("SecondaryButton")
+        self.import_button.clicked.connect(self.choose_pdfs)
         generate_button = QPushButton("Générer PDF")
         generate_button.clicked.connect(self.generate_pdf)
 
         widgets = self._field_widgets()
         stretch_before = len(widgets) - 2
-        for index, widget in enumerate(widgets + [import_button, generate_button]):
+        for index, widget in enumerate(widgets + [self.import_button, generate_button]):
             if index == stretch_before:
                 top.addStretch()
             top.addWidget(widget)
         return top
+
+    def _gmail_guide(self) -> QFrame:
+        guide = QFrame()
+        guide.setObjectName("GmailGuide")
+        layout = QHBoxLayout(guide)
+        layout.setContentsMargins(16, 12, 16, 12)
+        layout.setSpacing(24)
+
+        title = QLabel("MODE GMAIL")
+        title.setObjectName("GuideTitle")
+        layout.addWidget(title)
+
+        attachments = QLabel(
+            "<b>Pièces jointes</b><br>"
+            "Glissez directement les fichiers dans le grand espace ci-dessous."
+        )
+        attachments.setObjectName("MutedText")
+        layout.addWidget(attachments)
+
+        images = QLabel(
+            "<b>Images dans le corps du message</b><br>"
+            "Copiez l’image depuis Gmail, puis utilisez <b>Ctrl+V</b><br>"
+            "ou clic droit → Coller dans MultiPrep."
+        )
+        images.setObjectName("MutedText")
+        layout.addWidget(images)
+        layout.addStretch()
+        return guide
+
+    def _classic_guide(self) -> QFrame:
+        guide = QFrame()
+        guide.setObjectName("ClassicGuide")
+        layout = QHBoxLayout(guide)
+        layout.setContentsMargins(16, 12, 16, 12)
+        layout.setSpacing(24)
+
+        title = QLabel("MODE CLASSIQUE")
+        title.setObjectName("ClassicGuideTitle")
+        layout.addWidget(title)
+        files = QLabel(
+            "<b>Fichiers acceptés</b><br>"
+            "PDF · Word (.doc/.docx) · JPG · PNG<br>"
+            "Utilisez « Importer des fichiers » ou glissez-les dans le grand espace."
+        )
+        files.setObjectName("MutedText")
+        layout.addWidget(files)
+        clipboard = QLabel(
+            "<b>Captures et images copiées</b><br>"
+            "Utilisez <b>Ctrl+V</b> ou clic droit → Coller."
+        )
+        clipboard.setObjectName("MutedText")
+        layout.addWidget(clipboard)
+        layout.addStretch()
+        return guide
 
     def _field_widgets(self) -> list[QWidget]:
         return [
@@ -82,7 +184,26 @@ class EditorView(QWidget):
             self.suffix_check,
         ]
 
-    def _paste_hint(self) -> QLabel:
-        paste_hint = QLabel("Astuce : utilisez Ctrl + V ou clic droit -> Coller pour coller une capture d'écran du mail")
-        paste_hint.setStyleSheet("color: #cbd5e1; font-size: 9pt;")
-        return paste_hint
+    def _toggle_mode(self) -> None:
+        self.set_gmail_mode(not self.gmail_mode)
+        self.mode_changed(self.gmail_mode)
+
+    def set_gmail_mode(self, enabled: bool) -> None:
+        self.gmail_mode = enabled
+        self.gmail_guide.setVisible(enabled)
+        self.classic_guide.setVisible(not enabled)
+        self.import_button.setVisible(not enabled)
+        logo_path = APP_LOGO_PATH if enabled else CLASSIC_LOGO_PATH
+        pixmap = QPixmap(str(resource_path(logo_path)))
+        self.logo.setPixmap(
+            pixmap.scaled(
+                58,
+                58,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+        )
+        self.version_label.setText(
+            "VERSION 2.0.0 · GOOGLE WORKSPACE" if enabled else "VERSION 2.0.0 · MODE CLASSIQUE"
+        )
+        self.mode_button.setText("Passer au mode classique" if enabled else "Passer au mode Gmail")

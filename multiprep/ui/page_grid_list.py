@@ -2,19 +2,40 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from PySide6.QtCore import QByteArray, QMimeData, QPoint, QSize, Qt, Signal
+from PySide6.QtCore import QByteArray, QMimeData, QObject, QPoint, QRunnable, Qt, QThreadPool, QTimer, Signal
 from PySide6.QtGui import QDrag, QKeySequence
 from PySide6.QtWidgets import QAbstractItemView, QListView, QListWidget, QListWidgetItem, QWidget
 
 from multiprep.models.page_model import PageItem
 from multiprep.services.drop_service import file_paths_from_mime, has_supported_file_mime
-from multiprep.ui.page_thumbnail import PagePlaceholderWidget, PageThumbnailWidget
+from multiprep.services.thumbnail_service import ensure_page_thumbnails
+from multiprep.ui.page_card_delegate import CARD_SIZE, PageCardDelegate
+from multiprep.ui.page_thumbnail import PagePlaceholderWidget
 
 
 PAGE_DRAG_MIME = "application/x-multiprep-page-items"
 PAGE_ROLE = Qt.ItemDataRole.UserRole
 PLACEHOLDER_ROLE = Qt.ItemDataRole.UserRole + 1
-ITEM_SIZE = QSize(226, 334)
+ITEM_SIZE = CARD_SIZE
+
+
+class _ThumbnailSignals(QObject):
+    finished = Signal(int, list)
+
+
+class _ThumbnailWorker(QRunnable):
+    def __init__(self, generation: int, rows: list[int], pages: list[PageItem]) -> None:
+        super().__init__()
+        self.generation = generation
+        self.rows = rows
+        self.pages = pages
+        self.signals = _ThumbnailSignals()
+
+    def run(self) -> None:
+        try:
+            ensure_page_thumbnails(self.pages)
+        finally:
+            self.signals.finished.emit(self.generation, self.rows)
 
 
 class PageGridListWidget(QListWidget):
@@ -22,12 +43,16 @@ class PageGridListWidget(QListWidget):
     order_changed = Signal(list)
     delete_selected_requested = Signal()
     paste_requested = Signal()
+    browser_drop_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._drag_original_pages: list[PageItem] | None = None
         self._drag_pages: list[PageItem] = []
         self._placeholder_item: QListWidgetItem | None = None
+        self._render_generation = 0
+        self._pending_widget_rows: list[int] = []
+        self._thumbnail_workers: set[_ThumbnailWorker] = set()
         self._configure()
 
     def set_pages(self, pages: list[PageItem]) -> None:
@@ -42,6 +67,15 @@ class PageGridListWidget(QListWidget):
         return pages
 
     def dragEnterEvent(self, event) -> None:
+        formats = {fmt.lower() for fmt in event.mimeData().formats()}
+        browser_virtual_file = (
+            "application/x-qt-image" in formats
+            or "chromium/x-renderer-taint" in formats
+            or "filegroupdescriptorw" in formats
+            or "filecontents" in formats
+        )
+        if browser_virtual_file and not file_paths_from_mime(event.mimeData()):
+            self.browser_drop_requested.emit()
         if has_supported_file_mime(event.mimeData()) or event.mimeData().hasFormat(PAGE_DRAG_MIME):
             event.acceptProposedAction()
             return
@@ -113,17 +147,17 @@ class PageGridListWidget(QListWidget):
         self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.setSpacing(12)
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.setItemDelegate(PageCardDelegate(self))
 
     def _selected_rows(self) -> list[int]:
         return sorted(self.row(item) for item in self.selectedItems() if not item.data(PLACEHOLDER_ROLE))
 
-    def _add_page_item(self, page: PageItem, number: int) -> QListWidgetItem:
+    def _add_page_item(self, page: PageItem) -> QListWidgetItem:
         item = QListWidgetItem()
         item.setData(PAGE_ROLE, page)
         item.setData(PLACEHOLDER_ROLE, False)
         item.setSizeHint(ITEM_SIZE)
         self.addItem(item)
-        self.setItemWidget(item, PageThumbnailWidget(page, number))
         return item
 
     def _insert_placeholder(self, index: int) -> None:
@@ -200,12 +234,64 @@ class PageGridListWidget(QListWidget):
         drag.setHotSpot(QPoint(pixmap.width() // 2, pixmap.height() // 2))
 
     def _rebuild_items(self, pages: list[PageItem]) -> None:
+        self._render_generation += 1
+        generation = self._render_generation
+
         def render() -> None:
             self.clear()
-            for index, page in enumerate(pages):
-                self._add_page_item(page, index + 1)
+            for page in pages:
+                self._add_page_item(page)
 
         self._batch_update(render)
+        self._pending_widget_rows = list(range(len(pages)))
+        QTimer.singleShot(0, lambda: self._pump_thumbnail_workers(generation))
+
+    def append_pages(self, pages: list[PageItem]) -> None:
+        if not pages:
+            return
+        self._render_generation += 1
+        generation = self._render_generation
+        first_row = self.count()
+        for page in pages:
+            self._add_page_item(page)
+        self._pending_widget_rows = list(range(first_row, self.count()))
+        QTimer.singleShot(0, lambda: self._pump_thumbnail_workers(generation))
+
+    def _pump_thumbnail_workers(self, generation: int) -> None:
+        if generation != self._render_generation:
+            return
+        while self._pending_widget_rows and len(self._thumbnail_workers) < 4:
+            rows = self._pending_widget_rows[:8]
+            del self._pending_widget_rows[:8]
+            pages = [
+                self.item(row).data(PAGE_ROLE)
+                for row in rows
+                if self.item(row) is not None and not self.item(row).data(PLACEHOLDER_ROLE)
+            ]
+            worker = _ThumbnailWorker(generation, rows, pages)
+            worker.signals.finished.connect(
+                lambda finished_generation, finished_rows, current=worker:
+                    self._finish_thumbnail_batch(current, finished_generation, finished_rows)
+            )
+            self._thumbnail_workers.add(worker)
+            QThreadPool.globalInstance().start(worker)
+
+    def _finish_thumbnail_batch(
+        self,
+        worker: _ThumbnailWorker,
+        generation: int,
+        rows: list[int],
+    ) -> None:
+        self._thumbnail_workers.discard(worker)
+        if generation != self._render_generation:
+            QTimer.singleShot(
+                0,
+                lambda: self._pump_thumbnail_workers(self._render_generation),
+            )
+            return
+        self.viewport().update()
+        if self._pending_widget_rows:
+            QTimer.singleShot(0, lambda: self._pump_thumbnail_workers(generation))
 
     def _batch_update(self, callback: Callable[[], None]) -> None:
         previous_updates = self.updatesEnabled()

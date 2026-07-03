@@ -3,11 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtGui import QIcon, QKeySequence
-from PySide6.QtWidgets import QCheckBox, QLineEdit, QMainWindow, QStackedWidget
+from PySide6.QtWidgets import QApplication, QCheckBox, QLineEdit, QMainWindow, QStackedWidget
 
 from multiprep.models.page_model import PageItem, SourceDocument
 from multiprep.services.clipboard_service import ClipboardService
 from multiprep.services.drop_service import cleanup_mail_drop_dir, file_paths_from_mime, has_supported_file_mime
+from multiprep.services.gmail_import_service import GmailImportService
 from multiprep.services.pdf_service import PdfService
 from multiprep.services.settings_service import load_settings
 from multiprep.ui.date_widgets import DateSpin
@@ -15,14 +16,14 @@ from multiprep.ui.editor_view import EditorView
 from multiprep.ui.main_window_actions import MainWindowActionsMixin
 from multiprep.ui.page_board import PageBoard
 from multiprep.ui.result_view import ResultView
-from multiprep.ui.styles import APP_STYLE
-from multiprep.utils.paths import APP_ICON_PATH, EXPORTS_DIR, SEPARATORS_DIR, resource_path
+from multiprep.ui.styles import CLASSIC_STYLE, GMAIL_STYLE, set_theme_mode
+from multiprep.utils.paths import APP_ICON_PATH, CLASSIC_LOGO_PATH, EXPORTS_DIR, SEPARATORS_DIR, resource_path
 
 
 class MultiPrepWindow(MainWindowActionsMixin, QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("MultiPrep")
+        self.setWindowTitle("MultiPrep 2.0.0")
         self.setWindowIcon(QIcon(str(resource_path(APP_ICON_PATH))))
         self.resize(1180, 760)
         self.setAcceptDrops(True)
@@ -30,10 +31,16 @@ class MultiPrepWindow(MainWindowActionsMixin, QMainWindow):
         cleanup_mail_drop_dir()
         self.pdf_service = PdfService()
         self.clipboard_service = ClipboardService(self.pdf_service)
+        self.gmail_import_service = GmailImportService(self)
+        self.gmail_import_service.files_ready.connect(self._gmail_files_ready)
+        self.gmail_import_service.failed.connect(
+            lambda message: self.statusBar().showMessage(message, 5000)
+        )
         self.pages: list[PageItem] = []
         self.sources: list[SourceDocument] = []
         self.next_source_id = 1
         self.last_output_path: Path | None = None
+        self.gmail_mode = True
         self.separator_folder = SEPARATORS_DIR
         self.output_folder = EXPORTS_DIR
 
@@ -42,6 +49,7 @@ class MultiPrepWindow(MainWindowActionsMixin, QMainWindow):
         self._apply_style()
 
     def closeEvent(self, event) -> None:
+        self.gmail_import_service.stop()
         self.pdf_service.cleanup()
         cleanup_mail_drop_dir()
         super().closeEvent(event)
@@ -92,6 +100,7 @@ class MultiPrepWindow(MainWindowActionsMixin, QMainWindow):
             self.board,
             self.choose_pdfs,
             self.generate_pdf,
+            self.apply_mode,
         )
         self.result_page = ResultView()
         self.result_page.cancel_requested.connect(lambda: self.stack.setCurrentWidget(self.editor_page))
@@ -110,6 +119,7 @@ class MultiPrepWindow(MainWindowActionsMixin, QMainWindow):
         board.delete_all_requested.connect(self.delete_all_pages)
         board.paste_requested.connect(self.handle_paste)
         board.rotate_pages_requested.connect(self.rotate_pages)
+        board.browser_drop_requested.connect(self._activate_gmail_drop_overlay)
         return board
 
     def _spin(self, minimum: int, maximum: int, value: int) -> DateSpin:
@@ -117,4 +127,40 @@ class MultiPrepWindow(MainWindowActionsMixin, QMainWindow):
         return DateSpin(minimum, maximum, value, 66 if maximum > 99 else 46, digits)
 
     def _apply_style(self) -> None:
-        self.setStyleSheet(APP_STYLE)
+        self.apply_mode(True)
+
+    def apply_mode(self, gmail_mode: bool) -> None:
+        self.gmail_mode = gmail_mode
+        set_theme_mode(gmail_mode)
+        icon_path = APP_ICON_PATH if gmail_mode else CLASSIC_LOGO_PATH
+        icon = QIcon(str(resource_path(icon_path)))
+        self.setWindowIcon(icon)
+        QApplication.setWindowIcon(icon)
+        self.setStyleSheet(GMAIL_STYLE if gmail_mode else CLASSIC_STYLE)
+        if hasattr(self, "editor_page"):
+            self.editor_page.set_gmail_mode(gmail_mode)
+            self.editor_page.preview.apply_theme(gmail_mode)
+        if hasattr(self, "board"):
+            self.board.refresh_theme()
+            self.refresh_gmail_drop_target()
+
+    def refresh_gmail_drop_target(self) -> None:
+        if self.gmail_mode:
+            self.gmail_import_service.attach_to(
+                self.board.list_widget.viewport(),
+                visible=not self.pages,
+            )
+        else:
+            self.gmail_import_service.stop()
+
+    def _gmail_files_ready(self, paths: list[Path]) -> None:
+        self.gmail_import_service.stop()
+        self.add_files(paths)
+        self.refresh_gmail_drop_target()
+
+    def _activate_gmail_drop_overlay(self) -> None:
+        if self.gmail_mode:
+            self.gmail_import_service.attach_to(
+                self.board.list_widget.viewport(),
+                visible=not self.pages,
+            )

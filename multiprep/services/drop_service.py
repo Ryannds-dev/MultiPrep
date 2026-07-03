@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import base64
 import binascii
+import html as html_module
 import re
 import shutil
+import urllib.request
 from pathlib import Path, PureWindowsPath
 from urllib.parse import unquote
 
@@ -14,7 +16,8 @@ from multiprep.utils.paths import MAIL_DROP_DIR
 
 PDF_EXTENSIONS = {".pdf"}
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
-SUPPORTED_EXTENSIONS = PDF_EXTENSIONS | IMAGE_EXTENSIONS
+WORD_EXTENSIONS = {".doc", ".docx"}
+SUPPORTED_EXTENSIONS = PDF_EXTENSIONS | IMAGE_EXTENSIONS | WORD_EXTENSIONS
 RAW_IMAGE_FORMATS = {
     "image/jpeg": ".jpg",
     "image/jpg": ".jpg",
@@ -22,6 +25,10 @@ RAW_IMAGE_FORMATS = {
 }
 DATA_IMAGE_PATTERN = re.compile(
     rb"""data:(image/(?:png|jpe?g))(?:;[^,]*)?;base64,([a-zA-Z0-9+/=\s]+)""",
+    re.IGNORECASE,
+)
+HTML_IMAGE_URL_PATTERN = re.compile(
+    rb"""<img[^>]+src\s*=\s*["'](https?://[^"']+)""",
     re.IGNORECASE,
 )
 
@@ -32,7 +39,9 @@ def has_supported_file_mime(mime_data: QMimeData) -> bool:
     names = _virtual_attachment_names(mime_data)
     if any(_is_supported_path(name) for name in names):
         return True
-    return _has_embedded_image(mime_data)
+    if _has_embedded_image(mime_data):
+        return True
+    return False
 
 
 def file_paths_from_mime(mime_data: QMimeData) -> list[Path]:
@@ -85,6 +94,8 @@ def _extract_embedded_image(mime_data: QMimeData) -> Path | None:
         image = _raw_mime_image(mime_data)
     if image is None:
         image = _html_data_image(mime_data)
+    if image is None:
+        image = _html_remote_image(mime_data)
     if image is None or image.isNull():
         return None
 
@@ -100,7 +111,7 @@ def _has_embedded_image(mime_data: QMimeData) -> bool:
     if any(fmt in formats for fmt in RAW_IMAGE_FORMATS):
         return True
     html = _mime_bytes(mime_data, "text/html")
-    return bool(html and DATA_IMAGE_PATTERN.search(html))
+    return bool(html and (DATA_IMAGE_PATTERN.search(html) or HTML_IMAGE_URL_PATTERN.search(html)))
 
 
 def _qt_image(mime_data: QMimeData) -> QImage | None:
@@ -132,6 +143,22 @@ def _html_data_image(mime_data: QMimeData) -> QImage | None:
     try:
         data = base64.b64decode(match.group(2), validate=False)
     except (ValueError, binascii.Error):
+        return None
+    image = QImage.fromData(data)
+    return image if not image.isNull() else None
+
+
+def _html_remote_image(mime_data: QMimeData) -> QImage | None:
+    html = _mime_bytes(mime_data, "text/html")
+    match = HTML_IMAGE_URL_PATTERN.search(html)
+    if not match:
+        return None
+    url = html_module.unescape(match.group(1).decode("utf-8", errors="replace"))
+    try:
+        request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(request, timeout=8) as response:
+            data = response.read(25 * 1024 * 1024)
+    except (OSError, ValueError):
         return None
     image = QImage.fromData(data)
     return image if not image.isNull() else None
@@ -179,14 +206,14 @@ def _windows_attachment_names(mime_data: QMimeData) -> list[str]:
     return []
 
 
-def _chromium_download_names(mime_data: QMimeData) -> list[str]:
+def _browser_download_names(mime_data: QMimeData) -> list[str]:
     data = _mime_bytes(mime_data, "DownloadURL")
     if not data:
         fmt = _find_windows_mime_format(mime_data, "DownloadURL")
         data = bytes(mime_data.data(fmt)) if fmt else b""
     if not data:
         return []
-    # Chromium exposes "mime-type:file-name:url". The URL may itself contain
+    # Some browsers expose "mime-type:file-name:url". The URL may itself contain
     # colons, hence the deliberately limited split.
     parts = data.decode("utf-8", errors="replace").split(":", 2)
     if len(parts) != 3:
@@ -196,7 +223,7 @@ def _chromium_download_names(mime_data: QMimeData) -> list[str]:
 
 
 def _virtual_attachment_names(mime_data: QMimeData) -> list[str]:
-    return _windows_attachment_names(mime_data) or _chromium_download_names(mime_data)
+    return _windows_attachment_names(mime_data) or _browser_download_names(mime_data)
 
 
 def _find_windows_mime_format(mime_data: QMimeData, value: str, index: int | None = None) -> str | None:

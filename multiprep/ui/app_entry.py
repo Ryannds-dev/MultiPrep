@@ -14,7 +14,7 @@ def set_windows_app_id() -> None:
     if sys.platform != "win32":
         return
     try:
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("MultiPrep.MultiPrep")
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("MultiPrep.MultiPrep.2")
     except Exception:
         pass
 

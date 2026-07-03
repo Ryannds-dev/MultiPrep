@@ -5,6 +5,7 @@ from PySide6.QtGui import QColor, QPixmap, QTransform
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 
 from multiprep.models.page_model import PageItem
+from multiprep.ui.styles import is_gmail_mode
 
 TITLE_WIDTH = 190
 TITLE_HEIGHT = 78
@@ -84,9 +85,11 @@ class PageThumbnailWidget(QFrame):
 
 
     def _style(self, selected: bool) -> str:
-        border = "#f9fafb" if selected else self.item.source.color
-        background_alpha = 95 if selected else 45
+        gmail_mode = is_gmail_mode()
+        border = ("#202124" if gmail_mode else "#f9fafb") if selected else self.item.source.color
+        background_alpha = 48 if gmail_mode else (95 if selected else 45)
         color = QColor(self.item.source.color)
+        text_color = "#202124" if gmail_mode else "#f9fafb"
         return f"""
         PageThumbnailWidget {{
             background: rgba({color.red()}, {color.green()}, {color.blue()}, {background_alpha});
@@ -94,7 +97,7 @@ class PageThumbnailWidget(QFrame):
             border-radius: 8px;
         }}
         PageThumbnailWidget QLabel {{
-            color: #f9fafb;
+            color: {text_color};
             background: transparent;
         }}
         """
@@ -104,8 +107,24 @@ class PagePlaceholderWidget(QFrame):
     def __init__(self, count: int, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setFixedSize(CARD_WIDTH, CARD_HEIGHT)
-        self.setStyleSheet(
-            """
+        if is_gmail_mode():
+            self.setStyleSheet(
+                """
+                PagePlaceholderWidget {
+                    background: rgba(249, 171, 0, 35);
+                    border: 3px dashed #f9ab00;
+                    border-radius: 8px;
+                }
+                PagePlaceholderWidget QLabel {
+                    color: #7a4f00;
+                    background: transparent;
+                    font-weight: 700;
+                }
+                """
+            )
+        else:
+            self.setStyleSheet(
+                """
             PagePlaceholderWidget {
                 background: rgba(96, 165, 250, 45);
                 border: 3px dashed #93c5fd;
@@ -117,7 +136,7 @@ class PagePlaceholderWidget(QFrame):
                 font-weight: 700;
             }
             """
-        )
+            )
         layout = QVBoxLayout(self)
         label = QLabel(f"{count} page(s)")
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)

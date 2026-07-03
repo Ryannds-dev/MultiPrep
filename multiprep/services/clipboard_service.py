@@ -3,6 +3,7 @@ from __future__ import annotations
 from PySide6.QtWidgets import QApplication
 
 from multiprep.models.page_model import PageItem
+from multiprep.services.drop_service import file_paths_from_mime
 from multiprep.services.pdf_service import PdfService
 
 
@@ -11,14 +12,13 @@ class ClipboardService:
         self.pdf_service = pdf_service
 
     def has_image(self) -> bool:
-        return QApplication.clipboard().mimeData().hasImage()
+        return bool(file_paths_from_mime(QApplication.clipboard().mimeData()))
 
     def paste_image_as_page(self, source_id: int, color: str) -> PageItem | None:
-        image = QApplication.clipboard().image()
-        if image.isNull():
+        paths = file_paths_from_mime(QApplication.clipboard().mimeData())
+        if not paths:
             return None
-
-        image_path = self.pdf_service.cache_dir / f"clipboard_capture_{source_id}.png"
-        if not image.save(str(image_path), "PNG"):
+        image_path = paths[0]
+        if image_path.suffix.lower() not in {".jpg", ".jpeg", ".png"}:
             return None
         return self.pdf_service.capture_page(image_path, source_id, color)

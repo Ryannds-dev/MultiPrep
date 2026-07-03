@@ -27,8 +27,8 @@ class PdfService:
     def document_pages(self, source: SourceDocument) -> list[PageItem]:
         pages: list[PageItem] = []
         with fitz.open(source.path) as doc:
-            for index, page in enumerate(doc):
-                thumb = render_thumbnail(page, self.cache_dir / f"doc_{source.id}_page_{index}.png")
+            for index in range(len(doc)):
+                thumb = self.cache_dir / f"doc_{source.id}_page_{index}.png"
                 pages.append(PageItem(source, index, thumb, f"p.{index + 1}"))
         return pages
 
@@ -80,8 +80,7 @@ class PdfService:
 
         display_name = SourceDocument(source_id, image_path, color).display_name if page_type == "image" else None
         source = SourceDocument(source_id, pdf_path, color, display_name)
-        with fitz.open(pdf_path) as doc:
-            thumb = render_thumbnail(doc[0], self.cache_dir / f"{page_type}_{source_id}_thumb.png")
+        thumb = self.cache_dir / f"{page_type}_{source_id}_thumb.png"
         return PageItem(source, 0, thumb, label, page_type=page_type)
 
     def merge(self, pages: Sequence[PageItem], output_path: Path) -> None:
