@@ -29,8 +29,8 @@
   <div class="version">Version 2.0.0</div>
 </header>
 <nav>
-  <a href="#vue">Vue d’ensemble</a><a href="#modes">Modes</a><a href="#architecture">Architecture</a>
-  <a href="#imports">Imports</a><a href="#performance">Performance</a><a href="#build">Build</a><a href="#tests">Tests</a>
+  <a href="#vue">Vue d’ensemble</a><a href="#modes">Modes d’utilisation</a><a href="#architecture">Architecture</a>
+  <a href="#imports">Chaînes d’import</a><a href="#performance">Performances</a><a href="#build">Compilation</a><a href="#tests">Tests et validation</a>
 </nav>
 <main>
   <section id="vue">
@@ -51,7 +51,7 @@
     <p class="warn"><strong>Important :</strong> le helper Gmail est un composant Windows natif intégré à la grande zone. Il sert à recevoir les fichiers virtuels que Qt ne peut pas toujours extraire seul. Il n’ouvre pas de fenêtre séparée.</p>
   </section>
   <section id="architecture">
-    <h2>Architecture actuelle</h2>
+    <h2>Architecture</h2>
     <table>
       <tr><th>Fichier</th><th>Responsabilité</th></tr>
       <tr><td><code>run.py</code></td><td>Point d’entrée unique.</td></tr>
@@ -80,7 +80,7 @@
     <p>Microsoft Word s’exécute sans interface via PowerShell COM → export PDF → import par le moteur PDF commun.</p>
   </section>
   <section id="performance">
-    <h2>Moteur d’affichage rapide</h2>
+    <h2>Performances</h2>
     <ul>
       <li>aucun rendu de miniature pendant la création des modèles ;</li>
       <li>delegate Qt léger au lieu d’un widget complet par page ;</li>
