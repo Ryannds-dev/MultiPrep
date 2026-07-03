@@ -155,8 +155,8 @@ class EditorView(QWidget):
         title.setObjectName("ClassicGuideTitle")
         layout.addWidget(title)
         files = QLabel(
-            "<b>Fichiers du PC et Outlook bureau</b><br>"
-            "Importez depuis l’Explorateur Windows, le Bureau ou une pièce jointe Outlook.<br>"
+            "<b>Fichiers locaux et applications de bureau</b><br>"
+            "Importez depuis l’Explorateur, le Bureau ou une application de bureau (dont Outlook).<br>"
             "PDF · Word (.doc/.docx) · JPG · PNG"
         )
         files.setObjectName("MutedText")
