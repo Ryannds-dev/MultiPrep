@@ -200,6 +200,13 @@ internal static class Program
             try
             {
                 IDataObject data = Clipboard.GetDataObject();
+                List<string> files = GetFiles(data);
+                files.RemoveAll(path => !IsSupportedClipboardFile(path));
+                if (files.Count > 0)
+                {
+                    PublishFiles(files);
+                    return;
+                }
                 string imagePath = SaveEmbeddedImage(data, outputDirectory);
                 if (imagePath == null)
                     throw new InvalidOperationException("Aucune image lisible dans le presse-papiers.");
@@ -209,6 +216,12 @@ internal static class Program
             {
                 MessageBox.Show(ex.Message, "Collage impossible", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private static bool IsSupportedClipboardFile(string path)
+        {
+            string extension = Path.GetExtension(path).ToLowerInvariant();
+            return extension == ".png" || extension == ".jpg" || extension == ".jpeg";
         }
 
         private async void OnDragDrop(object sender, DragEventArgs e)
