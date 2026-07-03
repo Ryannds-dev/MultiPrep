@@ -135,8 +135,8 @@ class EditorView(QWidget):
         layout.addWidget(attachments)
 
         images = QLabel(
-            "<b>Images Gmail ou fichiers image du PC</b><br>"
-            "Copiez l’image depuis Gmail ou l’Explorateur, puis utilisez <b>Ctrl+V</b><br>"
+            "<b>Images dans le corps du mail Gmail</b><br>"
+            "Copiez l’image affichée dans le message, puis utilisez <b>Ctrl+V</b><br>"
             "ou clic droit → Coller dans MultiPrep."
         )
         images.setObjectName("MutedText")
