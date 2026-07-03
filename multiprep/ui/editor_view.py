@@ -155,15 +155,16 @@ class EditorView(QWidget):
         title.setObjectName("ClassicGuideTitle")
         layout.addWidget(title)
         files = QLabel(
-            "<b>Fichiers acceptés</b><br>"
-            "PDF · Word (.doc/.docx) · JPG · PNG<br>"
-            "Utilisez « Importer des fichiers » ou glissez-les dans le grand espace."
+            "<b>Fichiers du PC et Outlook bureau</b><br>"
+            "Importez depuis l’Explorateur Windows, le Bureau ou une pièce jointe Outlook.<br>"
+            "PDF · Word (.doc/.docx) · JPG · PNG"
         )
         files.setObjectName("MutedText")
         layout.addWidget(files)
         clipboard = QLabel(
-            "<b>Captures et images copiées</b><br>"
-            "Utilisez <b>Ctrl+V</b> ou clic droit → Coller."
+            "<b>Différence avec le mode Gmail</b><br>"
+            "Pour les pièces jointes de Gmail dans un navigateur, passez au mode Gmail.<br>"
+            "Les captures locales restent collables avec <b>Ctrl+V</b> ou clic droit → Coller."
         )
         clipboard.setObjectName("MutedText")
         layout.addWidget(clipboard)
