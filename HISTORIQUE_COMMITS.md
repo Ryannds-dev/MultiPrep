@@ -10,6 +10,7 @@ Ce document explique les commits du projet dans l’ordre chronologique. Il pré
 - **Difficulté :** Gmail transmet certaines pièces jointes comme des objets virtuels Windows et non comme des chemins de fichiers. Qt ne sait pas toujours terminer seul le transfert asynchrone fourni par le navigateur.
 - **Solution :** ajout d’un composant Windows natif intégré directement dans la grande zone de MultiPrep. Il récupère les flux virtuels du navigateur, les copie dans le dossier temporaire puis les remet au moteur d’import existant.
 - **Résultat :** les PDF, images et documents Word provenant de Gmail peuvent être déposés dans MultiPrep sans fenêtre d’import séparée. Le composant reste disponible en arrière-plan et se réactive pour plusieurs imports successifs.
+- **Correctif de défilement :** la détection distingue maintenant un fichier glissé depuis l’extérieur de MultiPrep d’un clic-glissé commencé dans l’application. La barre de défilement ne peut donc plus réafficher par erreur la zone « Glissez les pièces jointes Gmail ici » au-dessus des pages.
 
 ### Collage des images présentes dans le corps d’un mail
 

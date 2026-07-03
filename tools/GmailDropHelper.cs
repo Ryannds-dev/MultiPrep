@@ -28,6 +28,12 @@ internal static class Program
     [DllImport("user32.dll")]
     private static extern bool ClientToScreen(IntPtr window, ref POINT point);
 
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetAncestor(IntPtr window, uint flags);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetWindowRect(IntPtr window, out RECT rect);
+
     [StructLayout(LayoutKind.Sequential)]
     private struct RECT
     {
@@ -75,7 +81,9 @@ internal static class Program
         private readonly IntPtr parentWindow;
         private readonly bool initiallyVisible;
         private readonly Timer cursorTimer;
-        private bool cursorWasInside;
+        private bool dragStartedOutsideApplication;
+        private bool leftWasPressed;
+        private bool cursorWasInsideApplication;
 
         internal DropForm(string outputDirectory, string manifestPath, IntPtr parentWindow, bool initiallyVisible)
         {
@@ -138,22 +146,39 @@ internal static class Program
         private void PollDragIntoParent(object sender, EventArgs e)
         {
             RECT bounds;
+            RECT applicationBounds;
             POINT cursor;
             POINT origin = new POINT { X = 0, Y = 0 };
+            IntPtr applicationWindow = GetAncestor(parentWindow, 2);
             if (!GetClientRect(parentWindow, out bounds) ||
                 !ClientToScreen(parentWindow, ref origin) ||
+                applicationWindow == IntPtr.Zero ||
+                !GetWindowRect(applicationWindow, out applicationBounds) ||
                 !GetCursorPos(out cursor))
                 return;
             bool inside = cursor.X >= origin.X && cursor.Y >= origin.Y &&
                 cursor.X < origin.X + bounds.Right && cursor.Y < origin.Y + bounds.Bottom;
+            bool insideApplication =
+                cursor.X >= applicationBounds.Left && cursor.Y >= applicationBounds.Top &&
+                cursor.X < applicationBounds.Right && cursor.Y < applicationBounds.Bottom;
             bool leftPressed = (GetAsyncKeyState(0x01) & 0x8000) != 0;
-            if (!Visible && inside && !cursorWasInside && leftPressed)
+            if (!leftPressed)
+            {
+                dragStartedOutsideApplication = false;
+                leftWasPressed = false;
+                cursorWasInsideApplication = insideApplication;
+                return;
+            }
+            if ((!leftWasPressed && !cursorWasInsideApplication) || !insideApplication)
+                dragStartedOutsideApplication = true;
+            if (!Visible && inside && dragStartedOutsideApplication)
             {
                 FillParent();
                 Show();
                 BringToFront();
             }
-            cursorWasInside = inside;
+            leftWasPressed = true;
+            cursorWasInsideApplication = insideApplication;
         }
 
         private void OnDragEnter(object sender, DragEventArgs e)
