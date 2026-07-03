@@ -11,9 +11,6 @@ class ClipboardService:
     def __init__(self, pdf_service: PdfService) -> None:
         self.pdf_service = pdf_service
 
-    def has_image(self) -> bool:
-        return bool(file_paths_from_mime(QApplication.clipboard().mimeData()))
-
     def paste_image_as_page(self, source_id: int, color: str) -> PageItem | None:
         paths = file_paths_from_mime(QApplication.clipboard().mimeData())
         if not paths:

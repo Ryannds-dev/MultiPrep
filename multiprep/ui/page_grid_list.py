@@ -10,7 +10,7 @@ from multiprep.models.page_model import PageItem
 from multiprep.services.drop_service import file_paths_from_mime, has_supported_file_mime
 from multiprep.services.thumbnail_service import ensure_page_thumbnails
 from multiprep.ui.page_card_delegate import CARD_SIZE, PageCardDelegate
-from multiprep.ui.page_thumbnail import PagePlaceholderWidget
+from multiprep.ui.page_placeholder import PagePlaceholderWidget
 
 
 PAGE_DRAG_MIME = "application/x-multiprep-page-items"

@@ -1,5 +1,6 @@
 __pycache__/
 *.pyc
 temp/
-docs_site/
 build/
+exports/
+*.tmp

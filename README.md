@@ -1,115 +1,154 @@
-# MultiPrep
+# MultiPrep 2.0.0
 
-Application desktop Windows en Python/PySide6 pour preparer un PDF final a partir de plusieurs PDF importes.
+MultiPrep est une application Windows de préparation et d’assemblage de dossiers PDF. Elle importe des documents de plusieurs sources, affiche leurs pages, permet de les réorganiser et génère un PDF final avec un nom normalisé.
 
-Version actuelle : `v2.0.0`.
+La version 2.0.0 est conçue en priorité pour Google Workspace tout en conservant le fonctionnement historique avec les fichiers locaux et les applications de bureau.
 
-## Fonctionnalites V1
+## Deux modes clairement séparés
 
-- Import de PDF, documents Word (`.doc`/`.docx`), JPG et PNG par bouton ou glisser-deposer.
-- Import direct des pieces jointes Gmail depuis le navigateur dans la zone jaune integree a MultiPrep.
-- Mode Gmail actif par defaut avec une identite visuelle blanc/jaune et des consignes integrees.
-- Bascule vers le mode classique depuis l'en-tete de l'application.
-- Collage d'une capture d'ecran avec `Ctrl + V` ou clic droit puis `Coller`.
-- Affichage des pages en miniatures dans un espace principal.
-- Reorganisation des pages par glisser-deposer entre les emplacements.
-- Selection multiple avec `Shift` pour une plage et `Ctrl` pour ajouter/enlever une page.
-- Reorganisation des pages selectionnees par glisser-deposer entre les emplacements.
-- Pendant le glisser-deposer, un ghost et un indicateur d'insertion montrent la position cible.
-- Suppression d'une page, de la selection, ou de toutes les pages avec `Suppr` / `Delete` ou clic droit.
-- Couleur de bordure commune pour les pages provenant du meme PDF.
-- Insertion d'un separateur avant/apres une page via clic droit.
-- Separateurs charges depuis le dossier local `separateurs/`.
-- Fenetre de recherche et selection des separateurs.
-- Champs `Nom`, `Prenom`, date `JJ / MM / AAAA`, suffixe `P`.
-- Memorisation de la derniere date dans `settings.json`.
-- Fusion dans l'ordre affiche avec export au format `AAAA-MM-JJ_NOM-Prenom_P.pdf`.
-- Ecran resultat avec fichier PDF draggable vers une autre application Windows.
+### Mode Gmail — mode par défaut
 
-## Choix technique pour la grille
+Destiné à Gmail ouvert dans un navigateur :
 
-La grille utilise `QListWidget` en `IconMode` avec un delegate graphique leger : les cartes sont dessinees a la demande sans creer un widget complet par page.
-Les miniatures sont generees hors du thread graphique, par lots paralleles, puis mises en cache. L'ajout de nouveaux documents est incremental et ne reconstruit pas les pages deja presentes.
-Le drag interne conserve la selection multiple, le placeholder de position cible, la restauration en cas d'annulation et la recuperation de l'ordre final via `get_ordered_pages()`.
+- glisser-déposer des pièces jointes Gmail dans la grande zone jaune ;
+- import des PDF, documents Word, JPG et PNG ;
+- copie d’une image insérée dans le corps du message, puis `Ctrl+V` ou clic droit → **Coller** ;
+- collage d’un fichier JPG/PNG copié depuis l’Explorateur Windows ;
+- imports successifs sans redémarrer MultiPrep.
 
-## Structure du code
+Le composant natif Windows intégré à MultiPrep prend en charge les fichiers virtuels et le transfert asynchrone utilisés par les navigateurs. Il ne dépend pas de Google Chrome : il fonctionne avec les navigateurs Windows compatibles avec ces mécanismes, notamment Microsoft Edge et les navigateurs Chromium.
 
-Fichiers a lire en premier :
+### Mode classique
 
-- `run.py` : lance l'application.
-- `multiprep/ui/main_window.py` : initialise la fenetre principale.
-- `multiprep/ui/main_window_actions.py` : actions utilisateur principales.
-- `multiprep/ui/page_board.py` : conteneur de la grille et menu clic droit.
-- `multiprep/ui/page_grid_list.py` : liste draggable avec placeholder.
-- `multiprep/ui/page_card_delegate.py` : rendu leger des cartes sans widget par page.
-- `multiprep/services/pdf_service.py` : import PDF, captures, separateurs et fusion.
-- `multiprep/services/thumbnail_service.py` : miniatures differees, groupees et parallelisees.
+Destiné aux fichiers locaux et aux applications de bureau :
 
-Dossiers :
+- bouton **Importer des fichiers** ;
+- glisser-déposer depuis l’Explorateur Windows ou le Bureau ;
+- glisser-déposer depuis une application de bureau qui expose un fichier compatible, dont Outlook bureau ;
+- collage d’une capture ou d’une image locale.
 
-- `multiprep/ui/` : composants visuels PySide6.
-- `multiprep/services/` : logique metier sans interface.
-- `multiprep/models/` : donnees partagees.
-- `multiprep/utils/` : chemins et constantes utilitaires.
+Outlook n’est donc qu’un exemple de source compatible, pas une obligation.
 
-## Installation
+## Formats pris en charge
 
-Prerequis : Python 3.10 ou plus recent.
+- PDF : `.pdf`
+- Microsoft Word : `.doc`, `.docx`
+- Images : `.jpg`, `.jpeg`, `.png`
 
-Les versions de `PyMuPDF` et `pypdf` sont epinglees dans `requirements.txt` afin de rendre les installations reproductibles :
+L’import Word utilise Microsoft Word installé sur le poste pour produire un PDF fidèle à la mise en page d’origine.
+
+## Fonctions principales
+
+- aperçu des pages sous forme de cartes ;
+- rendu progressif et parallèle des miniatures ;
+- sélection simple, multiple ou par plage ;
+- réorganisation par glisser-déposer avec indicateur d’insertion ;
+- suppression et rotation des pages ;
+- insertion de séparateurs PDF ;
+- aperçu détaillé redimensionnable ;
+- mémorisation de la dernière date utilisée ;
+- export au format `AAAA-MM-JJ_NOM-Prenom_P.pdf`.
+
+## Performances de la version 2.0.0
+
+La grille utilise un delegate graphique léger au lieu de créer un widget complet par page. Les modèles apparaissent immédiatement, puis les miniatures sont produites hors du thread graphique, par lots parallèles et mises en cache.
+
+Mesures de référence sur le poste de développement :
+
+- environ 10 à 12 ms pour injecter 500 pages dans la grille ;
+- environ 0,63 seconde pour générer 120 miniatures d’un PDF réel.
+
+## Architecture
+
+```text
+MultiPrep/
+├── assets/                         Logos et composant natif Gmail
+├── dist/MultiPrep.exe              Livrable Windows
+├── multiprep/
+│   ├── models/                     Modèles de données
+│   ├── services/                   PDF, dépôt, Gmail, Word, presse-papiers
+│   ├── ui/                         Fenêtres, grille, delegate et styles
+│   └── utils/                      Chemins et couleurs
+├── separateurs/                    Bibliothèque de séparateurs PDF
+├── tests/                          Tests de non-régression
+├── tools/GmailDropHelper.cs        Source du composant natif Windows
+├── HISTORIQUE_COMMITS.md           Historique fonctionnel et technique
+├── documentation_multiprep.min.html Documentation technique locale
+├── Specifications techniques MultiPrep.docx
+├── Specifications techniques MultiPrep.pdf
+├── MultiPrep.spec                  Configuration PyInstaller
+└── run.py                          Point d’entrée
+```
+
+Fichiers clés :
+
+- `multiprep/ui/main_window.py` : fenêtre principale et gestion des modes ;
+- `multiprep/ui/editor_view.py` : en-tête, formulaires et consignes ;
+- `multiprep/ui/page_grid_list.py` : grille, sélection et glisser-déposer ;
+- `multiprep/ui/page_card_delegate.py` : rendu léger des cartes ;
+- `multiprep/services/drop_service.py` : formats locaux, Outlook et navigateur ;
+- `multiprep/services/gmail_import_service.py` : cycle de vie du helper Gmail ;
+- `multiprep/services/pdf_service.py` : conversion d’images et fusion PDF ;
+- `multiprep/services/thumbnail_service.py` : miniatures différées et groupées.
+
+## Installation pour le développement
+
+Prérequis :
+
+- Windows 10/11 ;
+- Python 3.10 ou plus récent ;
+- Microsoft Word pour importer `.doc` et `.docx`.
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python run.py
+```
+
+Dépendances PDF validées :
 
 ```text
 PyMuPDF==1.26.7
 pypdf==6.10.2
 ```
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-L'import Word utilise Microsoft Word installe sur le poste pour convertir le document en PDF tout en conservant sa mise en page.
-
-Pour une piece jointe Gmail ouverte dans le navigateur, glissez-la directement dans la zone jaune du mode Gmail. Cette zone integree utilise le transfert asynchrone Windows du navigateur, y compris pour les PDF et documents Word. Aucune fenetre supplementaire ne s'ouvre.
-
-Le navigateur ne remet pas toujours le contenu des images inserees directement dans le corps d'un message. Pour celles-ci, copiez l'image depuis Gmail puis utilisez `Ctrl+V` dans MultiPrep.
-
-## Lancement
+## Tests
 
 ```powershell
-python run.py
+python -m unittest discover -s tests -v
 ```
 
-## Separateurs
+## Compilation Windows
 
-Placez vos PDF de separation dans le dossier :
+Compiler le helper natif :
 
-```text
-separateurs/
+```powershell
+& 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe' `
+  /nologo /target:winexe /optimize+ `
+  /out:assets\GmailDropHelper.exe `
+  /reference:System.Windows.Forms.dll `
+  /reference:System.Drawing.dll `
+  tools\GmailDropHelper.cs
 ```
 
-Le dossier est cree automatiquement au premier usage si absent.
+Compiler l’application :
 
-## Export
-
-Les fichiers générés sont placés dans :
-
-```text
-exports/
+```powershell
+python -m PyInstaller --noconfirm --clean `
+  --workpath "$env:TEMP\multiprep-build" `
+  --distpath dist MultiPrep.spec
 ```
 
-Si un fichier du meme nom existe deja, il est ecrase lors de la generation.
+Le livrable attendu est uniquement `dist/MultiPrep.exe` ; le dossier de travail PyInstaller est placé dans le répertoire temporaire Windows.
 
-## Fichiers temporaires
+## Données locales
 
-MultiPrep cree un dossier local `temp/` a cote de l'application.
+MultiPrep utilise :
 
-```text
-temp/
-+-- cache/
-+-- mail_attachments/
-```
+- `settings.json` pour la dernière date ;
+- `separateurs/` pour la bibliothèque de séparateurs ;
+- `temp/` pour les miniatures, conversions et pièces jointes temporaires ;
+- `exports/` pour les PDF générés.
 
-Ce dossier contient les miniatures, captures collees et pieces jointes Outlook extraites temporairement.
-Il est nettoye au lancement et a la fermeture normale de l'application.
+Le cache temporaire est nettoyé au lancement et à la fermeture normale de l’application.

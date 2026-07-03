@@ -4,6 +4,13 @@ Ce document explique les commits du projet dans l’ordre chronologique. Il pré
 
 ## 3 juillet 2026 — MultiPrep 2.0.0, Google Workspace et performances
 
+### Passe de finition et synchronisation documentaire
+
+- **Problème réglé :** plusieurs documents décrivaient encore l’ancienne grille à widgets et l’ancien flux Outlook, tandis que des caches, builds intermédiaires, une documentation web dupliquée et un ancien logo subsistaient dans le dossier de travail.
+- **Solution :** audit complet du dépôt, suppression des éléments non référencés, remplacement de la documentation HTML, réécriture du README et régénération reproductible des spécifications DOCX/PDF via `tools/build_specifications.py`.
+- **Identité :** toutes les documentations actives affichent désormais la version 2.0.0 et utilisent l’univers blanc/jaune du mode Google Workspace, tout en documentant le mode classique bleu.
+- **Résultat :** le code, les ressources, les spécifications, la documentation et le livrable décrivent la même architecture et les mêmes fonctionnalités.
+
 ### Passage de la version Outlook à la version Google Workspace
 
 - **Besoin :** utiliser principalement MultiPrep avec Gmail dans un navigateur, alors que le glisser-déposer historique avait été conçu pour Outlook bureau.

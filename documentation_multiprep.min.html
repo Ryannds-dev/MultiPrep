@@ -1,855 +1,112 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Documentation technique - MultiPrep</title><link rel="icon" href="assets/multiprep-logo-2.ico" type="image/x-icon"><style>:root{color-scheme:dark;--blue:#2563eb;--blue-soft:#60a5fa;--bg:#111827;--panel:#0f172a;--panel-2:#1f2937;--border:#374151;--text:#f9fafb;--muted:#cbd5e1;--muted-2:#94a3b8;--code:#020617;--warning:#f59e0b;--success:#22c55e;}*{box-sizing:border-box;}body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI",Arial,sans-serif;line-height:1.55;}.topbar{min-height:104px;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:24px 32px;border-bottom:1px solid var(--border);background:#0b1220;}.eyebrow{margin:0 0 4px;color:var(--blue-soft);font-size:0.78rem;font-weight:700;text-transform:uppercase;}h1,h2,h3{margin:0;letter-spacing:0;}h1{font-size:clamp(1.55rem,2vw,2.1rem);}.topbar__badge{padding:8px 12px;border:1px solid #1d4ed8;border-radius:999px;color:#dbeafe;background:rgba(37,99,235,0.18);white-space:nowrap;}.layout{display:grid;grid-template-columns:340px minmax(0,1fr);min-height:calc(100vh - 104px);}.sidebar{border-right:1px solid var(--border);background:#0b1220;padding:18px;overflow:auto;}.sidebar__header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;}.sidebar h2{font-size:1rem;}button{border:0;border-radius:6px;padding:8px 10px;background:var(--blue);color:white;font-weight:700;cursor:pointer;}button:hover,button:focus-visible{background:#1d4ed8;outline:2px solid var(--blue-soft);outline-offset:2px;}.tree{display:grid;gap:4px;}.tree__item{width:100%;display:flex;align-items:center;gap:8px;border:1px solid transparent;border-radius:6px;padding:8px 10px;background:transparent;color:var(--muted);text-align:left;font-weight:600;}.tree__item:hover{background:#111c31;}.tree__item.is-active{border-color:#3b82f6;background:rgba(37,99,235,0.22);color:var(--text);}.tree__item[data-depth="1"]{padding-left:26px;}.tree__item[data-depth="2"]{padding-left:46px;}.tree__type{color:var(--blue-soft);font-family:Consolas,"Courier New",monospace;}.content{min-width:0;padding:30px;overflow:auto;}.doc{max-width:1100px;}.hero{border:1px solid var(--border);border-radius:8px;padding:24px;background:var(--panel);}.hero h2{font-size:1.7rem;margin-bottom:10px;}.summary{color:var(--muted);font-size:1.02rem;}.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;}.tag{border:1px solid var(--border);border-radius:999px;padding:5px 9px;color:#dbeafe;background:#172033;font-size:0.86rem;}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px;}.section{margin-top:22px;}.card{border:1px solid var(--border);border-radius:8px;padding:18px;background:var(--panel);}.card h3,.section h3{margin-bottom:10px;font-size:1.08rem;}.card p,.section p{margin:0 0 10px;color:var(--muted);}.list{margin:0;padding-left:20px;color:var(--muted);}.list li + li{margin-top:8px;}.detail-table{width:100%;border-collapse:collapse;margin-top:10px;overflow:hidden;border:1px solid var(--border);border-radius:8px;}.detail-table th,.detail-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top;text-align:left;}.detail-table th{width:190px;color:#dbeafe;background:#172033;}.detail-table tr:last-child th,.detail-table tr:last-child td{border-bottom:0;}code{border-radius:4px;padding:2px 5px;background:var(--code);color:#bfdbfe;font-family:Consolas,"Courier New",monospace;}.callout{border-left:4px solid var(--blue);border-radius:6px;padding:14px 16px;background:#172033;color:var(--muted);}.callout.warning{border-left-color:var(--warning);}.callout.success{border-left-color:var(--success);}@media (max-width:900px){.topbar{align-items:flex-start;flex-direction:column;}.layout{grid-template-columns:1fr;}.sidebar{max-height:42vh;border-right:0;border-bottom:1px solid var(--border);}.grid{grid-template-columns:1fr;}}</style></head><body><header class="topbar"><div><p class="eyebrow">Projet Python / PySide6</p><h1>Documentation technique - MultiPrep</h1></div><div class="topbar__badge">Version v2.0.0</div></header><div class="layout"><aside class="sidebar" aria-label="Arborescence du projet"><div class="sidebar__header"><h2>Arborescence</h2><button id="overviewButton" type="button">Vue d'ensemble</button></div><nav id="tree" class="tree"></nav></aside><main class="content" id="content" tabindex="-1"></main></div>
-<script>
-const treeItems = [
-  { id: "run.py", label: "run.py", type: "file", depth: 0 },
-  { id: "requirements.txt", label: "requirements.txt", type: "file", depth: 0 },
-  { id: "README.md", label: "README.md", type: "file", depth: 0 },
-  { id: "MultiPrep.spec", label: "MultiPrep.spec", type: "file", depth: 0 },
-  { id: "settings.json", label: "settings.json", type: "file", depth: 0 },
-  { id: "multiprep", label: "multiprep/", type: "folder", depth: 0 },
-  { id: "multiprep.models", label: "models/", type: "folder", depth: 1 },
-  { id: "multiprep.models.page_model", label: "page_model.py", type: "file", depth: 2 },
-  { id: "multiprep.services", label: "services/", type: "folder", depth: 1 },
-  { id: "multiprep.services.pdf_service", label: "pdf_service.py", type: "file", depth: 2 },
-  { id: "multiprep.services.clipboard_service", label: "clipboard_service.py", type: "file", depth: 2 },
-  { id: "multiprep.services.drop_service", label: "drop_service.py", type: "file", depth: 2 },
-  { id: "multiprep.services.thumbnail_service", label: "thumbnail_service.py", type: "file", depth: 2 },
-  { id: "multiprep.services.name_service", label: "name_service.py", type: "file", depth: 2 },
-  { id: "multiprep.services.settings_service", label: "settings_service.py", type: "file", depth: 2 },
-  { id: "multiprep.ui", label: "ui/", type: "folder", depth: 1 },
-  { id: "multiprep.ui.app_entry", label: "app_entry.py", type: "file", depth: 2 },
-  { id: "multiprep.ui.main_window", label: "main_window.py", type: "file", depth: 2 },
-  { id: "multiprep.ui.main_window_actions", label: "main_window_actions.py", type: "file", depth: 2 },
-  { id: "multiprep.ui.editor_view", label: "editor_view.py", type: "file", depth: 2 },
-  { id: "multiprep.ui.page_board", label: "page_board.py", type: "file", depth: 2 },
-  { id: "multiprep.ui.page_grid_list", label: "page_grid_list.py", type: "file", depth: 2 },
-  { id: "multiprep.ui.page_thumbnail", label: "page_thumbnail.py", type: "file", depth: 2 },
-  { id: "multiprep.ui.page_preview", label: "page_preview.py", type: "file", depth: 2 },
-  { id: "multiprep.ui.dialogs", label: "dialogs.py", type: "file", depth: 2 },
-  { id: "multiprep.ui.result_view", label: "result_view.py", type: "file", depth: 2 },
-  { id: "multiprep.ui.date_widgets", label: "date_widgets.py", type: "file", depth: 2 },
-  { id: "multiprep.utils", label: "utils/", type: "folder", depth: 1 },
-  { id: "multiprep.utils.paths", label: "paths.py", type: "file", depth: 2 },
-  { id: "multiprep.utils.colors", label: "colors.py", type: "file", depth: 2 },
-  { id: "assets", label: "assets/", type: "folder", depth: 0 },
-  { id: "separateurs", label: "separateurs/", type: "folder", depth: 0 },
-  { id: "exports", label: "exports/", type: "folder", depth: 0 },
-  { id: "temp", label: "temp/", type: "folder", depth: 0 },
-  { id: "dist", label: "dist/", type: "folder", depth: 0 },
-  { id: "build", label: "build/", type: "folder", depth: 0 }
-];
-
-const docs = {
-  overview: {
-    title: "Vue d'ensemble",
-    type: "guide",
-    summary:
-      "MultiPrep est une application desktop Windows en Python. Elle permet d'importer des PDF et des images, de réorganiser les pages, d'ajouter des séparateurs, puis de générer un PDF final.",
-    sections: [
-      {
-        title: "Versions de dépendances fixées",
-        items: [
-          "<div class=\"callout success\"><strong>Installation reproductible :</strong> <code>PyMuPDF==1.26.7</code> et <code>pypdf==6.10.2</code> sont épinglées dans <code>requirements.txt</code>. Une nouvelle installation récupère donc les versions validées pour MultiPrep v2.0.0.</div>"
-        ]
-      },
-      {
-        title: "Comment lire le projet",
-        items: [
-          "<code>run.py</code> lance l'application et délègue le démarrage à <code>multiprep/ui/app_entry.py</code>.",
-          "<code>multiprep/ui/main_window.py</code> crée la fenêtre principale, les services et les grandes zones de l'interface.",
-          "<code>multiprep/ui/main_window_actions.py</code> contient les actions utilisateur : importer, coller, supprimer, tourner, générer.",
-          "<code>multiprep/services/pdf_service.py</code> contient le travail PDF : lecture, miniatures, séparateurs, images converties, fusion finale.",
-          "<code>multiprep/models/page_model.py</code> définit les objets partagés entre l'interface et les services."
-        ]
-      },
-      {
-        title: "Ordre conseillé de lecture du code",
-        items: [
-          "1. <code>run.py</code>, pour voir le point de départ.",
-          "2. <code>app_entry.py</code>, pour comprendre la création de l'application PySide6.",
-          "3. <code>main_window.py</code>, pour voir l'assemblage global.",
-          "4. <code>main_window_actions.py</code>, pour suivre les scénarios utilisateur.",
-          "5. <code>pdf_service.py</code>, pour comprendre la logique PDF.",
-          "6. <code>page_grid_list.py</code> et <code>page_board.py</code>, pour comprendre le drag and drop."
-        ]
-      },
-      {
-        title: "Fichiers générés à ne pas modifier",
-        items: [
-          "<code>build/</code> : fichiers intermédiaires PyInstaller. On peut les supprimer, PyInstaller les recrée.",
-          "<code>dist/</code> : sortie PyInstaller, avec <code>MultiPrep.exe</code>. On ne modifie pas le code dedans.",
-          "<code>temp/</code> : fichiers temporaires de l'application.",
-          "<code>exports/</code> : PDF générés par l'utilisateur.",
-          "<code>settings.json</code> : préférences utilisateur. Il peut être lu, mais il est surtout écrit par l'application."
-        ]
-      },
-      {
-        title: "Fichiers importants pour modifier l'application",
-        items: [
-          "Modifier l'interface : lire <code>editor_view.py</code>, <code>page_board.py</code>, <code>page_thumbnail.py</code>, <code>styles.py</code>.",
-          "Modifier le comportement utilisateur : lire <code>main_window_actions.py</code>.",
-          "Modifier la fusion PDF ou les miniatures : lire <code>pdf_service.py</code> et <code>thumbnail_service.py</code>.",
-          "Modifier les noms de fichiers exportés : lire <code>name_service.py</code>.",
-          "Modifier les chemins de travail : lire <code>utils/paths.py</code>."
-        ]
-      }
-    ]
-  },
-
-  "run.py": {
-    title: "run.py",
-    type: "fichier Python",
-    summary:
-      "Fichier de lancement minimal. En développement, on démarre MultiPrep avec <code>python run.py</code>. PyInstaller s'en sert aussi comme point d'entrée pour créer l'exécutable.",
-    details: [
-      ["Rôle global", "Importer la fonction <code>main</code> depuis <code>multiprep.ui.app_entry</code>, puis l'appeler seulement si le fichier est exécuté directement."],
-      ["Communication", "Communique uniquement avec <code>multiprep/ui/app_entry.py</code>. Tout le vrai démarrage est délégué à ce fichier."],
-      ["Pourquoi c'est utile", "PyInstaller aime avoir un point d'entrée simple. Ici, <code>run.py</code> évite de mélanger le lancement avec le code de l'interface."]
-    ],
-    imports: [
-      ["<code>multiprep.ui.app_entry.main</code>", "Fonction interne du projet.", "Elle crée l'application PySide6, affiche la fenêtre principale et lance la boucle événementielle."]
-    ],
-    functions: [
-      ["Bloc <code>if __name__ == \"__main__\"</code>", "Aucun paramètre.", "Vérifie que le fichier est lancé directement.", "Ne retourne rien.", "Appelé par Python quand on exécute <code>python run.py</code>."]
-    ]
-  },
-
-  "requirements.txt": {
-    title: "requirements.txt",
-    type: "fichier de dépendances",
-    summary:
-      "Liste les bibliothèques Python nécessaires au projet. Il permet de reconstruire l'environnement avec <code>pip install -r requirements.txt</code>.",
-    sections: [
-      {
-        title: "Dépendances",
-        items: [
-          "<code>PySide6>=6.6</code> : bibliothèque graphique utilisée pour toute l'interface desktop.",
-          "<code>PyMuPDF==1.26.7</code> : importé sous le nom <code>fitz</code>, utilisé pour lire les PDF et rendre les miniatures. Cette version est épinglée.",
-          "<code>pypdf==6.10.2</code> : utilisé pour copier, tourner et fusionner les pages PDF dans le fichier final. Cette version est épinglée."
-        ]
-      }
-    ]
-  },
-
-  "README.md": {
-    title: "README.md",
-    type: "documentation projet",
-    summary:
-      "Documentation courte du projet. Elle explique les fonctionnalités, l'installation, le lancement, les dossiers utilisés et les fichiers à lire en premier.",
-    details: [
-      ["Rôle global", "Donner une première orientation à quelqu'un qui ouvre le projet."],
-      ["Quand le modifier", "Quand une commande change, quand un dossier change de rôle, ou quand une fonctionnalité importante est ajoutée."],
-      ["Lien avec le code", "Il ne participe pas à l'exécution, mais il doit rester cohérent avec <code>run.py</code>, <code>requirements.txt</code> et l'organisation de <code>multiprep/</code>."]
-    ]
-  },
-
-  "MultiPrep.spec": {
-    title: "MultiPrep.spec",
-    type: "configuration PyInstaller",
-    summary:
-      "Fichier de recette utilisé par PyInstaller pour fabriquer <code>dist/MultiPrep.exe</code>.",
-    details: [
-      ["Point d'entrée", "La section <code>Analysis(['run.py'])</code> indique que la construction démarre depuis <code>run.py</code>."],
-      ["Ressources incluses", "<code>datas=[('assets/multiprep-logo-2.ico', 'assets')]</code> embarque l'icône dans l'exécutable."],
-      ["Mode fenêtre", "<code>console=False</code> crée une application Windows sans console noire."],
-      ["Sortie", "La section <code>EXE(... name='MultiPrep' ...)</code> produit l'exécutable final nommé <code>MultiPrep.exe</code>."]
-    ],
-    sections: [
-      {
-        title: "À retenir",
-        items: [
-          "Ce fichier n'est pas exécuté par l'application en développement.",
-          "Il sert seulement au packaging.",
-          "Si on change l'icône, le nom ou le point d'entrée, c'est ici qu'il faut vérifier."
-        ]
-      }
-    ]
-  },
-
-  "settings.json": {
-    title: "settings.json",
-    type: "fichier de paramètres",
-    summary:
-      "Fichier créé et mis à jour par l'application. Il mémorise actuellement la dernière date utilisée dans l'interface.",
-    details: [
-      ["Créé par", "<code>multiprep/services/settings_service.py</code> via <code>save_last_date</code>."],
-      ["Lu par", "<code>load_settings</code>, appelé dans <code>MultiPrepWindow._init_fields</code>."],
-      ["Pourquoi il existe", "Pour que l'utilisateur retrouve automatiquement la dernière date au prochain lancement."],
-      ["À modifier ?", "En général non. C'est un fichier de données utilisateur, pas un fichier de code."]
-    ]
-  },
-
-  multiprep: {
-    title: "multiprep/",
-    type: "dossier source",
-    summary:
-      "C'est le package Python principal. Il contient le code source réel de l'application : interface, services, modèles et utilitaires.",
-    sections: [
-      {
-        title: "Sous-dossiers",
-        items: [
-          "<code>ui/</code> : composants visuels PySide6, fenêtre principale, vues, grille de pages, dialogues.",
-          "<code>services/</code> : logique métier sans interface directe : PDF, presse-papiers, glisser-déposer, paramètres, noms de fichiers.",
-          "<code>models/</code> : objets de données partagés dans le projet.",
-          "<code>utils/</code> : constantes techniques, chemins et couleurs."
-        ]
-      },
-      {
-        title: "Pourquoi un package ?",
-        items: [
-          "Les fichiers <code>__init__.py</code> permettent d'importer le code avec des chemins clairs, par exemple <code>from multiprep.services.pdf_service import PdfService</code>.",
-          "Cela évite d'avoir tous les fichiers Python mélangés à la racine.",
-          "PyInstaller peut suivre plus facilement les imports depuis <code>run.py</code>."
-        ]
-      }
-    ]
-  },
-
-  "multiprep.models": {
-    title: "multiprep/models/",
-    type: "dossier de modèles",
-    summary:
-      "Contient les structures de données partagées. Ces classes ne dessinent rien et ne manipulent pas directement les PDF : elles décrivent les objets de l'application."
-  },
-
-  "multiprep.models.page_model": {
-    title: "page_model.py",
-    type: "fichier Python",
-    summary:
-      "Définit les objets centraux : source de document, page affichée dans la grille et option de séparateur.",
-    imports: [
-      ["<code>dataclass</code>", "Décorateur standard Python.", "Réduit le code répétitif pour créer des classes de données."],
-      ["<code>Path</code>", "Objet standard pour représenter les chemins.", "Stocke les chemins des PDF, images et miniatures."],
-      ["<code>Optional</code>", "Type optionnel.", "Indique que <code>preview_path</code> peut être absent."]
-    ],
-    classes: [
-      ["<code>SourceDocument</code>", "Représente un fichier source importé ou créé.", "Attributs : <code>id</code>, <code>path</code>, <code>color</code>, <code>display_name_override</code>.", "Propriétés : <code>display_name</code> affiche le nom du fichier ou un nom personnalisé, <code>display_stem</code> enlève l'extension."],
-      ["<code>PageItem</code>", "Représente une page visible dans la grille.", "Attributs : source, index de page, miniature, libellé, type, rotation.", "Propriété : <code>display_name</code> adapte le texte selon page PDF, image, capture ou séparateur."],
-      ["<code>SeparatorOption</code>", "Représente un séparateur proposé dans la fenêtre de choix.", "Attributs : nom, chemin, nombre de pages, miniature optionnelle.", "Utilisé par <code>SeparatorDialog</code>."]
-    ],
-    details: [
-      ["Liens projet", "Utilisé par presque tous les fichiers : les services créent des <code>PageItem</code>, l'interface les affiche, et la fusion PDF les relit."]
-    ]
-  },
-
-  "multiprep.services": {
-    title: "multiprep/services/",
-    type: "dossier de services",
-    summary:
-      "Contient la logique métier réutilisable. Ces fichiers font le travail technique pendant que les vues PySide6 s'occupent de l'affichage."
-  },
-
-  "multiprep.services.pdf_service": {
-    title: "pdf_service.py",
-    type: "fichier Python",
-    summary:
-      "Service central pour importer des PDF, convertir des images en PDF, générer des miniatures, lister les séparateurs et fusionner le PDF final.",
-    imports: [
-      ["<code>shutil</code>", "Module standard de fichiers.", "Supprime proprement le cache de miniatures."],
-      ["<code>copy.copy</code>", "Copie superficielle.", "Copie une page PDF avant rotation et ajout au writer."],
-      ["<code>Path</code>", "Chemins de fichiers.", "Manipule les chemins d'entrée, de cache et de sortie."],
-      ["<code>Sequence</code>", "Type de collection ordonnée.", "Décrit la liste de pages à fusionner sans imposer un type exact."],
-      ["<code>fitz</code>", "PyMuPDF.", "Ouvre les PDF, rend les pages, crée un PDF depuis une image."],
-      ["<code>PdfReader</code> / <code>PdfWriter</code>", "Objets pypdf.", "Lisent les PDF sources et écrivent le PDF final."],
-      ["<code>PageItem</code>, <code>SeparatorOption</code>, <code>SourceDocument</code>", "Modèles du projet.", "Structurent les données retournées aux vues."],
-      ["<code>render_thumbnail</code>", "Service interne.", "Crée les miniatures PNG affichées dans la grille."],
-      ["<code>CACHE_DIR</code>", "Constante de chemin.", "Indique où stocker les fichiers temporaires."]
-    ],
-    classes: [
-      ["<code>PdfService</code>", "Responsable du traitement PDF et image.", "Attribut important : <code>cache_dir</code>.", "Méthodes principales : <code>document_pages</code>, <code>separators</code>, <code>separator_pages</code>, <code>capture_page</code>, <code>image_page</code>, <code>merge</code>."]
-    ],
-    functions: [
-      ["<code>__init__(cache_dir=None)</code>", "Chemin de cache optionnel.", "Prépare le dossier de cache et le nettoie au démarrage.", "Ne retourne rien.", "Appelé dans <code>MultiPrepWindow.__init__</code>."],
-      ["<code>cleanup()</code>", "Aucun paramètre.", "Supprime le cache temporaire.", "Ne retourne rien.", "Appelé à la fermeture de la fenêtre."],
-      ["<code>document_pages(source)</code>", "<code>SourceDocument</code>.", "Ouvre un PDF, génère une miniature par page et crée des <code>PageItem</code>.", "Retourne <code>list[PageItem]</code>.", "Appelé quand l'utilisateur importe un PDF."],
-      ["<code>separators(folder)</code>", "Dossier contenant les séparateurs.", "Liste les PDF disponibles et prépare une miniature de prévisualisation.", "Retourne <code>list[SeparatorOption]</code>.", "Appelé avant d'ouvrir le dialogue de séparateurs."],
-      ["<code>separator_pages(source)</code>", "<code>SourceDocument</code> d'un séparateur.", "Transforme les pages d'un séparateur en <code>PageItem</code>.", "Retourne une liste de pages.", "Appelé après choix d'un séparateur."],
-      ["<code>capture_page(image_path, source_id, color)</code>", "Chemin image, identifiant, couleur.", "Convertit une capture collée en page PDF temporaire.", "Retourne un <code>PageItem</code>.", "Appelé par <code>ClipboardService</code>."],
-      ["<code>image_page(image_path, source_id, color)</code>", "Chemin image, identifiant, couleur.", "Convertit une image importée en page PDF temporaire.", "Retourne un <code>PageItem</code>.", "Appelé lors de l'import d'une image."],
-      ["<code>merge(pages, output_path)</code>", "Pages ordonnées et chemin de sortie.", "Copie chaque page dans un PDF final en appliquant la rotation.", "Ne retourne rien, écrit un fichier.", "Appelé par <code>generate_pdf</code>."]
-    ],
-    details: [
-      ["Liens projet", "Reçoit les demandes depuis <code>main_window_actions.py</code> et <code>clipboard_service.py</code>. Retourne des modèles lus par l'UI."]
-    ]
-  },
-
-  "multiprep.services.clipboard_service": {
-    title: "clipboard_service.py",
-    type: "fichier Python",
-    summary:
-      "Gère le collage d'image depuis le presse-papiers et transforme la capture en page utilisable par MultiPrep.",
-    imports: [
-      ["<code>QApplication</code>", "Objet application PySide6.", "Donne accès au presse-papiers global avec <code>QApplication.clipboard()</code>."],
-      ["<code>PageItem</code>", "Modèle du projet.", "Type de retour quand une image collée devient une page."],
-      ["<code>PdfService</code>", "Service PDF.", "Convertit l'image sauvegardée en page PDF temporaire."]
-    ],
-    classes: [
-      ["<code>ClipboardService</code>", "Responsable de la lecture du presse-papiers.", "Attribut : <code>pdf_service</code>.", "Méthodes : <code>has_image</code>, <code>paste_image_as_page</code>."]
-    ],
-    functions: [
-      ["<code>__init__(pdf_service)</code>", "Instance de <code>PdfService</code>.", "Stocke le service PDF pour convertir les captures.", "Ne retourne rien.", "Appelé dans <code>MultiPrepWindow.__init__</code>."],
-      ["<code>has_image()</code>", "Aucun paramètre.", "Vérifie si le presse-papiers contient une image.", "Retourne <code>bool</code>.", "Appelé avant de tenter un collage."],
-      ["<code>paste_image_as_page(source_id, color)</code>", "Identifiant source et couleur.", "Sauvegarde l'image du presse-papiers dans le cache puis demande à <code>PdfService</code> de créer une page.", "Retourne <code>PageItem | None</code>.", "Appelé par <code>handle_paste</code>."]
-    ]
-  },
-
-  "multiprep.services.drop_service": {
-    title: "drop_service.py",
-    type: "fichier Python",
-    summary:
-      "Interprète les données glissées dans l'application : fichiers locaux classiques et pièces jointes Outlook sous Windows.",
-    imports: [
-      ["<code>shutil</code>", "Gestion de fichiers.", "Nettoie le dossier temporaire des pièces jointes."],
-      ["<code>Path</code> / <code>PureWindowsPath</code>", "Chemins de fichiers.", "Crée des chemins locaux et nettoie les noms Windows."],
-      ["<code>QMimeData</code>", "Objet Qt de données glissées.", "Permet de lire les URL, formats Windows et contenus."],
-      ["<code>MAIL_DROP_DIR</code>", "Chemin interne.", "Stocke temporairement les pièces jointes extraites."]
-    ],
-    functions: [
-      ["<code>has_supported_file_mime(mime_data)</code>", "Données MIME Qt.", "Détermine si le drag contient un PDF ou une image supportée.", "Retourne <code>bool</code>.", "Appelé dans les événements drag."],
-      ["<code>file_paths_from_mime(mime_data)</code>", "Données MIME Qt.", "Retourne les chemins utilisables, locaux ou extraits d'Outlook.", "Retourne <code>list[Path]</code>.", "Appelé au drop."],
-      ["<code>cleanup_mail_drop_dir()</code>", "Aucun paramètre.", "Supprime le dossier temporaire des pièces jointes.", "Ne retourne rien.", "Appelé au démarrage et à la fermeture."],
-      ["Fonctions privées <code>_windows_...</code>", "Données MIME Windows.", "Décodent les formats spéciaux Outlook.", "Retour variable.", "Appelées seulement par ce service."]
-    ],
-    details: [
-      ["Liens projet", "Utilisé par <code>main_window.py</code> et <code>page_grid_list.py</code> pour accepter les fichiers glissés."]
-    ]
-  },
-
-  "multiprep.services.thumbnail_service": {
-    title: "thumbnail_service.py",
-    type: "fichier Python",
-    summary:
-      "Petit service spécialisé qui transforme une page PDF PyMuPDF en image PNG de miniature.",
-    imports: [
-      ["<code>Path</code>", "Chemins de fichiers.", "Indique où enregistrer la miniature."],
-      ["<code>fitz</code>", "PyMuPDF.", "Fournit le type de page et les fonctions de rendu."]
-    ],
-    functions: [
-      ["<code>render_thumbnail(page, output_path)</code>", "Page PyMuPDF et chemin de sortie.", "Calcule un zoom, rend la page en image, sauvegarde le PNG.", "Retourne <code>output_path</code>.", "Appelé par <code>PdfService</code>."]
-    ]
-  },
-
-  "multiprep.services.name_service": {
-    title: "name_service.py",
-    type: "fichier Python",
-    summary:
-      "Normalise les noms saisis par l'utilisateur et construit le nom final du PDF exporté.",
-    imports: [
-      ["<code>re</code>", "Expressions régulières.", "Nettoie les caractères non désirés et compacte les espaces."],
-      ["<code>unicodedata</code>", "Normalisation Unicode.", "Retire les accents pour produire des noms de fichiers simples."],
-      ["<code>date</code>", "Date standard Python.", "Formate la date dans le nom de sortie."]
-    ],
-    functions: [
-      ["<code>normalize_name_part(text, uppercase)</code>", "Texte saisi et booléen de mise en majuscules.", "Nettoie accents, ponctuation et espaces.", "Retourne une chaîne prête pour le nom de fichier.", "Appelé par <code>generate_pdf</code>."],
-      ["<code>build_output_filename(output_date, name, firstname, with_suffix)</code>", "Date, nom, prénom, suffixe P ou non.", "Assemble le nom final au format <code>AAAA-MM-JJ_NOM-Prenom_P.pdf</code>.", "Retourne <code>str</code>.", "Appelé juste avant la fusion."]
-    ]
-  },
-
-  "multiprep.services.settings_service": {
-    title: "settings_service.py",
-    type: "fichier Python",
-    summary:
-      "Lit et écrit les petits paramètres utilisateur dans <code>settings.json</code>.",
-    imports: [
-      ["<code>json</code>", "Module standard JSON.", "Lit et écrit <code>settings.json</code>."],
-      ["<code>dataclass</code>", "Classe de données.", "Crée simplement <code>AppSettings</code>."],
-      ["<code>date</code>", "Date standard.", "Stocke la dernière date utilisée."],
-      ["<code>SETTINGS_FILE</code>", "Chemin interne.", "Indique le fichier de paramètres à utiliser."]
-    ],
-    classes: [
-      ["<code>AppSettings</code>", "Conteneur de paramètres.", "Attribut : <code>last_date</code>.", "Utilisé au démarrage de la fenêtre."]
-    ],
-    functions: [
-      ["<code>load_settings()</code>", "Aucun paramètre.", "Charge la dernière date ou utilise la date du jour si le fichier manque ou est invalide.", "Retourne <code>AppSettings</code>.", "Appelé dans <code>MultiPrepWindow._init_fields</code>."],
-      ["<code>save_last_date(value)</code>", "Date choisie.", "Écrit la date au format ISO dans <code>settings.json</code>.", "Ne retourne rien.", "Appelé après génération réussie du PDF."]
-    ]
-  },
-
-  "multiprep.ui": {
-    title: "multiprep/ui/",
-    type: "dossier interface",
-    summary:
-      "Contient toute l'interface PySide6 : fenêtre principale, vues, grille de pages, menus, dialogues, preview et styles."
-  },
-
-  "multiprep.ui.app_entry": {
-    title: "app_entry.py",
-    type: "fichier Python",
-    summary:
-      "Crée l'application PySide6, configure l'icône et affiche la fenêtre principale.",
-    imports: [
-      ["<code>ctypes</code>", "Accès aux API Windows.", "Définit un identifiant d'application pour l'intégration Windows."],
-      ["<code>sys</code>", "Système Python.", "Fournit les arguments à <code>QApplication</code> et permet <code>sys.exit</code>."],
-      ["<code>QIcon</code>", "Icône Qt.", "Charge l'icône de l'application."],
-      ["<code>QApplication</code>", "Application Qt.", "Objet obligatoire pour lancer une interface PySide6."],
-      ["<code>MultiPrepWindow</code>", "Fenêtre principale.", "Classe affichée au démarrage."],
-      ["<code>APP_ICON_PATH</code>, <code>resource_path</code>", "Utilitaires de chemins.", "Trouvent l'icône en mode dev ou exécutable PyInstaller."]
-    ],
-    functions: [
-      ["<code>set_windows_app_id()</code>", "Aucun paramètre.", "Déclare l'identité Windows de l'application si on est sous Windows.", "Ne retourne rien.", "Appelé au début de <code>main</code>."],
-      ["<code>main()</code>", "Aucun paramètre.", "Crée <code>QApplication</code>, applique l'icône, instancie <code>MultiPrepWindow</code>, affiche la fenêtre et lance la boucle Qt.", "Ne retourne normalement pas, termine par <code>sys.exit</code>.", "Appelé par <code>run.py</code>."]
-    ]
-  },
-
-  "multiprep.ui.main_window": {
-    title: "main_window.py",
-    type: "fichier Python",
-    summary:
-      "Assemble la fenêtre principale : services, état de l'application, champs de saisie, vues et événements globaux.",
-    imports: [
-      ["<code>Path</code>", "Chemins de fichiers.", "Type de <code>last_output_path</code>."],
-      ["<code>QIcon</code>, <code>QKeySequence</code>", "Objets Qt.", "Icône fenêtre et détection du raccourci Coller."],
-      ["<code>QCheckBox</code>, <code>QLineEdit</code>, <code>QMainWindow</code>, <code>QStackedWidget</code>", "Widgets Qt.", "Construisent la fenêtre et les champs."],
-      ["Modèles <code>PageItem</code>, <code>SourceDocument</code>", "Données projet.", "Stockent les pages importées et leurs sources."],
-      ["Services", "Clipboard, drop, PDF, settings.", "Donnent à la fenêtre ses capacités techniques."],
-      ["Vues UI", "DateSpin, EditorView, PageBoard, ResultView, styles.", "Assemblent l'écran principal et l'écran résultat."],
-      ["Chemins", "Icône, exports, séparateurs.", "Définissent les dossiers utilisés par défaut."]
-    ],
-    classes: [
-      ["<code>MultiPrepWindow</code>", "Fenêtre principale de l'application.", "Attributs : <code>pdf_service</code>, <code>clipboard_service</code>, <code>pages</code>, <code>sources</code>, <code>next_source_id</code>, <code>separator_folder</code>, <code>output_folder</code>.", "Méthodes : événements Qt, initialisation des champs, création des vues, connexion de la grille."]
-    ],
-    functions: [
-      ["<code>closeEvent(event)</code>", "Événement Qt.", "Nettoie les fichiers temporaires avant fermeture.", "Ne retourne rien.", "Appelé par Qt quand la fenêtre se ferme."],
-      ["<code>dragEnterEvent(event)</code>", "Événement Qt.", "Accepte les fichiers supportés glissés sur la fenêtre.", "Ne retourne rien.", "Appelé pendant un drag."],
-      ["<code>dropEvent(event)</code>", "Événement Qt.", "Récupère les chemins et appelle <code>add_files</code>.", "Ne retourne rien.", "Appelé au dépôt."],
-      ["<code>keyPressEvent(event)</code>", "Événement clavier.", "Intercepte Ctrl+V pour coller une capture.", "Ne retourne rien.", "Appelé à chaque touche."],
-      ["<code>_init_fields()</code>", "Aucun paramètre.", "Crée les champs Nom, Prénom, Date et suffixe.", "Ne retourne rien.", "Appelé au démarrage."],
-      ["<code>_build_pages()</code>", "Aucun paramètre.", "Crée la pile editor/result et connecte les boutons.", "Ne retourne rien.", "Appelé au démarrage."],
-      ["<code>_create_board()</code>", "Aucun paramètre.", "Crée <code>PageBoard</code> et connecte ses signaux aux actions.", "Retourne <code>PageBoard</code>.", "Appelé par <code>_build_pages</code>."]
-    ]
-  },
-
-  "multiprep.ui.main_window_actions": {
-    title: "main_window_actions.py",
-    type: "fichier Python",
-    summary:
-      "Mixin qui regroupe les actions utilisateur de la fenêtre principale : importer, coller, supprimer, tourner, insérer un séparateur, générer le PDF.",
-    imports: [
-      ["<code>date</code>", "Date standard.", "Construit la date sélectionnée."],
-      ["<code>Path</code>", "Chemins.", "Manipule les chemins de fichiers importés."],
-      ["<code>QFileDialog</code>, <code>QMessageBox</code>", "Widgets Qt.", "Ouvre le sélecteur de fichiers et affiche les messages."],
-      ["<code>PageItem</code>, <code>SourceDocument</code>", "Modèles.", "Typent les pages et les sources."],
-      ["<code>name_service</code>", "Service interne.", "Normalise le nom et construit le nom du PDF."],
-      ["<code>save_last_date</code>", "Service paramètres.", "Mémorise la date après export."],
-      ["<code>SeparatorDialog</code>", "Dialogue UI.", "Permet de choisir un séparateur."],
-      ["<code>SOURCE_COLORS</code>", "Palette interne.", "Attribue une couleur à chaque source importée."]
-    ],
-    classes: [
-      ["<code>MainWindowActionsMixin</code>", "Ajoute les comportements métier à <code>MultiPrepWindow</code>.", "Utilise les attributs créés dans <code>main_window.py</code> : <code>pages</code>, <code>board</code>, <code>pdf_service</code>, champs de saisie.", "Méthodes principales : <code>choose_pdfs</code>, <code>add_files</code>, <code>handle_paste</code>, <code>generate_pdf</code>."]
-    ],
-    functions: [
-      ["<code>choose_pdfs()</code>", "Aucun.", "Ouvre la fenêtre de sélection de fichiers.", "Ne retourne rien.", "Appelée par le bouton Importer."],
-      ["<code>add_files(paths)</code>", "Liste de chemins.", "Répartit PDF et images vers les bonnes méthodes.", "Ne retourne rien.", "Appelée par import et drop."],
-      ["<code>handle_paste()</code>", "Aucun.", "Colle une image du presse-papiers comme page.", "Ne retourne rien.", "Appelée par Ctrl+V ou menu contextuel."],
-      ["<code>delete_pages(page_indexes)</code>", "Index sélectionnés.", "Supprime les pages demandées.", "Ne retourne rien.", "Appelée par PageBoard."],
-      ["<code>rotate_pages(page_indexes, degrees)</code>", "Index et angle.", "Met à jour la rotation des pages.", "Ne retourne rien.", "Appelée par le menu contextuel."],
-      ["<code>open_separator_dialog(insert_index)</code>", "Position d'insertion.", "Liste les séparateurs puis insère le choix.", "Ne retourne rien.", "Appelée par le menu contextuel."],
-      ["<code>generate_pdf()</code>", "Aucun.", "Valide les champs, construit le nom, lance la fusion, sauvegarde la date et affiche le résultat.", "Ne retourne rien.", "Appelée par le bouton Générer PDF."],
-      ["<code>reset_case()</code>", "Aucun.", "Vide le dossier courant pour repartir sur un nouveau cas.", "Ne retourne rien.", "Appelée depuis l'écran résultat."]
-    ]
-  },
-
-  "multiprep.ui.editor_view": {
-    title: "editor_view.py",
-    type: "fichier Python",
-    summary:
-      "Vue principale de travail : barre de champs, bouton d'import, bouton de génération, grille des pages et panneau de prévisualisation.",
-    imports: [
-      ["<code>Callable</code>", "Type Python.", "Type les callbacks <code>choose_pdfs</code> et <code>generate_pdf</code> reçus depuis la fenêtre."],
-      ["<code>Qt</code>", "Constantes Qt.", "Règle l'orientation du splitter."],
-      ["Widgets Qt", "QCheckBox, layouts, labels, boutons, splitter, QWidget.", "Construisent la vue de travail visible par l'utilisateur."],
-      ["<code>DateSpin</code>", "Widget interne.", "Affiche les champs jour, mois et année."],
-      ["<code>PageBoard</code>", "Composant interne.", "Affiche la grille des pages importées."],
-      ["<code>PagePreviewPanel</code>", "Composant interne.", "Affiche la page sélectionnée en grand."]
-    ],
-    classes: [
-      ["<code>EditorView</code>", "Écran principal de préparation.", "Attributs : champs, board, callbacks <code>choose_pdfs</code> et <code>generate_pdf</code>.", "Méthodes : <code>_build</code>, <code>_toolbar</code>, <code>_field_widgets</code>, <code>_paste_hint</code>."]
-    ],
-    functions: [
-      ["<code>__init__(...)</code>", "Widgets de champs, <code>PageBoard</code>, callbacks, parent optionnel.", "Stocke les dépendances visuelles et lance la construction.", "Ne retourne rien.", "Appelé par <code>MultiPrepWindow._build_pages</code>."],
-      ["<code>_build()</code>", "Aucun.", "Assemble la barre d'outils, l'aide au collage, la grille et la prévisualisation.", "Ne retourne rien.", "Appelé à l'initialisation."],
-      ["<code>_toolbar()</code>", "Aucun.", "Crée la ligne des champs et boutons Importer / Générer PDF.", "Retourne <code>QHBoxLayout</code>.", "Appelé par <code>_build</code>."],
-      ["<code>_field_widgets()</code>", "Aucun.", "Regroupe les labels et champs dans l'ordre d'affichage.", "Retourne <code>list[QWidget]</code>.", "Appelé par <code>_toolbar</code>."],
-      ["<code>_paste_hint()</code>", "Aucun.", "Crée le texte d'aide pour Ctrl+V.", "Retourne <code>QLabel</code>.", "Appelé par <code>_build</code>."]
-    ],
-    details: [
-      ["Liens projet", "Créé par <code>MultiPrepWindow._build_pages</code>. Reçoit des widgets déjà créés par la fenêtre pour garder l'état centralisé."]
-    ]
-  },
-
-  "multiprep.ui.page_board": {
-    title: "page_board.py",
-    type: "fichier Python",
-    summary:
-      "Conteneur de haut niveau pour la grille de pages. Il expose des signaux propres à la fenêtre principale.",
-    imports: [
-      ["<code>QPoint</code>, <code>Qt</code>, <code>Signal</code>", "Objets Qt Core.", "Gèrent la position du menu, les données d'items et les signaux envoyés à la fenêtre."],
-      ["<code>QAction</code>", "Action de menu Qt.", "Crée les entrées du clic droit."],
-      ["Widgets Qt", "QListWidgetItem, QMenu, QVBoxLayout, QWidget.", "Construisent le conteneur et le menu contextuel."],
-      ["<code>PageItem</code>", "Modèle interne.", "Type les pages affichées."],
-      ["<code>PageGridListWidget</code>", "Grille interne.", "Composant réellement chargé du drag and drop."],
-      ["<code>PageThumbnailWidget</code>", "Carte page.", "Permet de mettre à jour le style de sélection."]
-    ],
-    classes: [
-      ["<code>PageBoard</code>", "Encapsule <code>PageGridListWidget</code> et son menu contextuel.", "Attributs : <code>pages</code>, <code>list_widget</code>.", "Méthodes : <code>set_pages</code>, sélection, suppression, menu contextuel, synchronisation des styles."]
-    ],
-    functions: [
-      ["<code>set_pages(pages)</code>", "Liste de <code>PageItem</code>.", "Remplace les pages affichées dans la grille.", "Ne retourne rien.", "Appelé après import, suppression, rotation ou réorganisation."],
-      ["<code>selected_indexes()</code>", "Aucun.", "Lit les lignes sélectionnées.", "Retourne <code>list[int]</code>.", "Utilisé par les actions de suppression et rotation."],
-      ["<code>delete_selection()</code>", "Aucun.", "Émet le signal de suppression si des pages sont sélectionnées.", "Ne retourne rien.", "Appelé par touche Suppr ou menu."],
-      ["<code>_connect_list()</code>", "Aucun.", "Connecte les signaux de la grille aux signaux du board.", "Ne retourne rien.", "Appelé à l'initialisation."],
-      ["<code>_apply_order(pages)</code>", "Nouvel ordre des pages.", "Met à jour l'état du board et émet le signal vers la fenêtre sans reconstruire une deuxième fois la grille.", "Ne retourne rien.", "Appelé après un drop interne."],
-      ["<code>_open_context_menu(position)</code>", "Position du clic.", "Construit le menu clic droit selon la page ciblée.", "Ne retourne rien.", "Appelé par Qt sur clic droit."]
-    ],
-    details: [
-      ["Liens projet", "Traduit les interactions de la grille en signaux : supprimer, coller, insérer séparateur, tourner, réordonner."]
-    ]
-  },
-
-  "multiprep.ui.page_grid_list": {
-    title: "page_grid_list.py",
-    type: "fichier Python",
-    summary:
-      "Grille cliquable et déplaçable des pages. C'est le coeur du drag and drop interne.",
-    imports: [
-      ["<code>Callable</code>", "Type standard Python.", "Type la fonction appelée pendant les mises à jour en lot."],
-      ["<code>QByteArray</code>, <code>QMimeData</code>, <code>QPoint</code>, <code>QSize</code>, <code>Qt</code>, <code>Signal</code>", "Objets Qt Core.", "Décrivent les données déplacées, les positions, les tailles et les signaux."],
-      ["<code>QDrag</code>, <code>QKeySequence</code>", "Objets Qt GUI.", "Lancement du drag et détection de Ctrl+V."],
-      ["Widgets Qt", "QAbstractItemView, QListView, QListWidget, QListWidgetItem, QWidget.", "Base de la grille en mode icônes."],
-      ["<code>PageItem</code>", "Modèle interne.", "Donnée stockée dans chaque item Qt."],
-      ["<code>drop_service</code>", "Service interne.", "Détecte et extrait les fichiers déposés."],
-      ["<code>PagePlaceholderWidget</code>, <code>PageThumbnailWidget</code>", "Widgets internes.", "Affichent les pages et l'emplacement temporaire pendant le drag."]
-    ],
-    classes: [
-      ["<code>PageGridListWidget</code>", "Liste Qt en mode icônes, spécialisée pour les pages MultiPrep.", "Attributs : pages déplacées, état de drag, placeholder.", "Méthodes principales : <code>set_pages</code>, <code>get_ordered_pages</code>, événements drag/drop, gestion du placeholder."]
-    ],
-    functions: [
-      ["<code>set_pages(pages)</code>", "Liste de pages.", "Reconstruit la grille avec une mise à jour en lot pour limiter les repaint Qt.", "Ne retourne rien.", "Appelé par <code>PageBoard</code>."],
-      ["<code>get_ordered_pages()</code>", "Aucun.", "Relit l'ordre actuel des items en ignorant le placeholder.", "Retourne <code>list[PageItem]</code>.", "Appelé après drag et par le board."],
-      ["<code>dragEnterEvent</code> / <code>dragMoveEvent</code> / <code>dropEvent</code>", "Événements Qt.", "Acceptent fichiers externes et pages internes.", "Ne retournent rien.", "Appelés automatiquement par Qt pendant un drag."],
-      ["<code>startDrag(supported_actions)</code>", "Actions Qt supportées.", "Prépare le déplacement multi-pages sans recréer toute la grille : seules les lignes sélectionnées sont retirées, puis un placeholder est inséré.", "Ne retourne rien.", "Appelé par Qt quand l'utilisateur commence à déplacer une sélection."],
-      ["<code>_remove_rows(rows)</code>", "Index des lignes sélectionnées.", "Retire seulement les items déplacés au lieu de reconstruire toutes les miniatures.", "Ne retourne rien.", "Appelé au début d'un drag interne."],
-      ["<code>_commit_placeholder_drop()</code>", "Aucun.", "Insère les pages déplacées à la position du placeholder, reconstruit une seule fois la grille finale et émet le nouvel ordre.", "Ne retourne rien.", "Appelé au drop interne."],
-      ["<code>_rebuild_items(pages)</code>", "Liste de pages.", "Recrée les cartes quand une reconstruction complète est nécessaire.", "Ne retourne rien.", "Appelé par <code>set_pages</code> et après validation du drop."],
-      ["<code>_batch_update(callback)</code>", "Fonction sans paramètre.", "Désactive temporairement les repaint et signaux pendant une mise à jour de liste.", "Ne retourne rien.", "Appelé pendant les reconstructions ou suppressions groupées."]
-    ],
-    details: [
-      ["Optimisation drag/drop", "Le déplacement est plus fluide car la grille évite les reconstructions répétées : elle déplace un placeholder pendant le mouvement, puis reconstruit l'affichage final une seule fois au dépôt."],
-      ["Liens projet", "Utilise <code>drop_service.py</code> pour les fichiers déposés et <code>PageThumbnailWidget</code> pour l'affichage de chaque page."]
-    ]
-  },
-
-  "multiprep.ui.page_thumbnail": {
-    title: "page_thumbnail.py",
-    type: "fichier Python",
-    summary:
-      "Définit les cartes visuelles des pages et le placeholder affiché pendant le déplacement.",
-    imports: [
-      ["<code>Qt</code>", "Constantes Qt.", "Gère curseur, alignements et redimensionnement."],
-      ["<code>QColor</code>, <code>QPixmap</code>, <code>QTransform</code>", "Objets graphiques Qt.", "Chargent les miniatures, appliquent la rotation et calculent les couleurs."],
-      ["Widgets Qt", "QFrame, QLabel, QVBoxLayout, QWidget.", "Construisent les cartes visuelles."],
-      ["<code>PageItem</code>", "Modèle interne.", "Fournit miniature, rotation, couleur source et nom affiché."]
-    ],
-    classes: [
-      ["<code>PageThumbnailWidget</code>", "Carte d'une page dans la grille.", "Attribut : <code>item</code>.", "Méthodes : sélection visuelle, redimensionnement d'image, titre, découpe des mots longs, style."],
-      ["<code>PagePlaceholderWidget</code>", "Emplacement temporaire pendant un drag.", "Attribut : nombre de pages déplacées.", "Affiche une zone pointillée indiquant la cible."]
-    ],
-    functions: [
-      ["<code>set_selected(selected)</code>", "Booléen.", "Change la bordure et le fond selon la sélection.", "Ne retourne rien.", "Appelé par <code>PageBoard</code>."],
-      ["<code>_scaled_pixmap(pixmap)</code>", "Image Qt.", "Applique la rotation puis adapte l'image à la carte.", "Retourne <code>QPixmap</code>.", "Appelé à la construction de la carte."],
-      ["<code>_title(item, number)</code>", "Page et numéro visible.", "Construit le titre selon capture, image, séparateur ou PDF.", "Retourne <code>str</code>.", "Appelé à la construction."],
-      ["<code>_wrap_long_words(title)</code>", "Titre.", "Évite les débordements de texte dans les cartes.", "Retourne <code>str</code>.", "Appelé avant affichage du titre."]
-    ]
-  },
-
-  "multiprep.ui.page_preview": {
-    title: "page_preview.py",
-    type: "fichier Python",
-    summary:
-      "Panneau de prévisualisation haute résolution de la page sélectionnée.",
-    imports: [
-      ["<code>fitz</code>", "PyMuPDF.", "Rend la page PDF en image haute résolution."],
-      ["<code>Qt</code>", "Constantes Qt.", "Gère alignements et redimensionnement."],
-      ["<code>QPixmap</code>, <code>QTransform</code>", "Objets graphiques Qt.", "Stockent l'image de preview et appliquent la rotation."],
-      ["Widgets Qt", "QFrame, layouts, labels, QSizePolicy, QToolButton, QWidget.", "Construisent le panneau repliable."],
-      ["<code>PageItem</code>", "Modèle interne.", "Indique quel fichier et quelle page prévisualiser."]
-    ],
-    classes: [
-      ["<code>PagePreviewPanel</code>", "Affiche la page courante et peut être replié.", "Attributs : <code>_expanded</code>, <code>_pixmap</code>, labels et bouton.", "Méthodes : <code>set_page</code>, <code>_render_page</code>, <code>_refresh_image</code>, <code>_toggle</code>."]
-    ],
-    functions: [
-      ["<code>set_page(page)</code>", "Page ou <code>None</code>.", "Affiche le titre et rend l'image de la page sélectionnée.", "Ne retourne rien.", "Appelé quand la sélection change."],
-      ["<code>resizeEvent(event)</code>", "Événement Qt.", "Redimensionne l'image au changement de taille.", "Ne retourne rien.", "Appelé automatiquement par Qt."],
-      ["<code>_toggle()</code>", "Aucun.", "Replie ou ouvre le panneau de prévisualisation.", "Ne retourne rien.", "Appelé par le bouton."],
-      ["<code>_render_page(page)</code>", "Page sélectionnée.", "Tente un rendu haute résolution, sinon utilise la miniature.", "Retourne <code>QPixmap</code>.", "Appelé par <code>set_page</code>."]
-    ],
-    details: [
-      ["Liens projet", "Connecté à <code>PageBoard.selected_page_changed</code> dans <code>EditorView</code>."]
-    ]
-  },
-
-  "multiprep.ui.dialogs": {
-    title: "dialogs.py",
-    type: "fichier Python",
-    summary:
-      "Contient le dialogue de choix des séparateurs et la zone de fichier exporté déplaçable.",
-    imports: [
-      ["<code>Path</code>", "Chemins.", "Stocke le chemin du PDF final dans <code>DraggableFile</code>."],
-      ["<code>Qt</code>, <code>QUrl</code>", "Objets Qt Core.", "Gèrent alignements, boutons souris et URL locales glissées."],
-      ["<code>QDrag</code>, <code>QIcon</code>", "Objets Qt GUI.", "Créent un glisser-déposer de fichier et affichent les miniatures de séparateurs."],
-      ["Widgets Qt", "QDialog, QFrame, layouts, labels, champs, liste, boutons, QWidget.", "Construisent le dialogue et la zone draggable."],
-      ["<code>SeparatorOption</code>", "Modèle interne.", "Décrit chaque séparateur disponible."]
-    ],
-    classes: [
-      ["<code>SeparatorDialog</code>", "Fenêtre de recherche et sélection de séparateur.", "Attributs : <code>options</code>, <code>selected</code>, champ de recherche, liste.", "Méthodes : construction, filtre, validation."],
-      ["<code>DraggableFile</code>", "Zone affichant le PDF final et permettant de le glisser vers une autre application.", "Attribut : <code>path</code>.", "Méthodes : <code>mouseMoveEvent</code>, <code>_mime_data</code>."]
-    ],
-    functions: [
-      ["<code>SeparatorDialog._refresh()</code>", "Aucun.", "Filtre les séparateurs selon la recherche et remplit la liste.", "Ne retourne rien.", "Appelé au démarrage et quand le texte change."],
-      ["<code>SeparatorDialog._choose_current()</code>", "Aucun.", "Valide l'item actuellement sélectionné.", "Ne retourne rien.", "Appelé par le bouton Ajouter."],
-      ["<code>SeparatorDialog._choose_item(item)</code>", "Item de liste.", "Stocke le séparateur choisi et ferme le dialogue.", "Ne retourne rien.", "Appelé au double-clic ou par Ajouter."],
-      ["<code>DraggableFile.mouseMoveEvent(event)</code>", "Événement souris.", "Démarre un drag du fichier si le bouton gauche est maintenu.", "Ne retourne rien.", "Appelé par Qt."],
-      ["<code>DraggableFile._mime_data()</code>", "Aucun.", "Crée les données MIME contenant l'URL locale du PDF.", "Retourne <code>QMimeData</code>.", "Appelé pendant le drag."]
-    ]
-  },
-
-  "multiprep.ui.result_view": {
-    title: "result_view.py",
-    type: "fichier Python",
-    summary:
-      "Écran affiché après génération du PDF. Il montre le fichier final et propose Annuler ou Nouveau dossier.",
-    imports: [
-      ["<code>Path</code>", "Chemins.", "Type le PDF généré à afficher."],
-      ["<code>Qt</code>, <code>Signal</code>", "Objets Qt Core.", "Gèrent alignements et signaux vers la fenêtre."],
-      ["Widgets Qt", "Layouts, labels, boutons, QWidget.", "Construisent l'écran résultat."],
-      ["<code>DraggableFile</code>", "Widget interne.", "Permet de glisser le PDF final vers une autre application."]
-    ],
-    classes: [
-      ["<code>ResultView</code>", "Vue résultat.", "Signaux : <code>cancel_requested</code>, <code>new_case_requested</code>.", "Méthodes : <code>show_output</code>, <code>_buttons</code>, <code>_clear</code>."]
-    ],
-    functions: [
-      ["<code>show_output(output_path)</code>", "Chemin du PDF généré.", "Reconstruit l'écran résultat avec nom, aide et zone draggable.", "Ne retourne rien.", "Appelé après génération réussie."],
-      ["<code>_buttons()</code>", "Aucun.", "Crée Annuler et Nouveau dossier.", "Retourne <code>QHBoxLayout</code>.", "Appelé par <code>show_output</code>."],
-      ["<code>_clear()</code>", "Aucun.", "Vide les anciens widgets avant d'afficher un nouveau résultat.", "Ne retourne rien.", "Appelé par <code>show_output</code>."]
-    ]
-  },
-
-  "multiprep.ui.date_widgets": {
-    title: "date_widgets.py",
-    type: "fichier Python",
-    summary:
-      "Widget personnalisé pour saisir jour, mois et année avec boutons + et -.",
-    imports: [
-      ["<code>Qt</code>", "Constantes Qt.", "Centre le texte dans le champ."],
-      ["<code>QHBoxLayout</code>, <code>QSpinBox</code>, <code>QToolButton</code>, <code>QWidget</code>", "Widgets Qt.", "Construisent le composant de saisie numérique."]
-    ],
-    classes: [
-      ["<code>DateSpin</code>", "Petit composant autour d'un <code>QSpinBox</code>.", "Attribut : <code>spin</code>.", "Méthodes : <code>value</code>, <code>setValue</code>, <code>_build_buttons</code>."],
-      ["<code>PaddedSpinBox</code>", "Sous-classe interne.", "Attribut : <code>digits</code>.", "Méthode : <code>textFromValue</code> ajoute les zéros, par exemple 05."]
-    ],
-    functions: [
-      ["<code>value()</code>", "Aucun.", "Lit la valeur actuelle du spinbox.", "Retourne <code>int</code>.", "Appelé au moment de générer la date."],
-      ["<code>setValue(value)</code>", "Nouvelle valeur.", "Met à jour le spinbox.", "Ne retourne rien.", "Disponible pour initialiser ou modifier la date."],
-      ["<code>_build_buttons()</code>", "Aucun.", "Crée les boutons - et + autour du champ.", "Ne retourne rien.", "Appelé à l'initialisation."]
-    ]
-  },
-
-  "multiprep.utils": {
-    title: "multiprep/utils/",
-    type: "dossier utilitaires",
-    summary:
-      "Contient les petites fonctions et constantes partagées : chemins du projet et palette de couleurs."
-  },
-
-  "multiprep.utils.paths": {
-    title: "paths.py",
-    type: "fichier Python",
-    summary:
-      "Centralise les chemins utilisés par l'application.",
-    imports: [
-      ["<code>sys</code>", "Informations runtime.", "Permet de détecter le dossier temporaire PyInstaller <code>_MEIPASS</code>."],
-      ["<code>Path</code>", "Chemins modernes.", "Construit les chemins de manière lisible."]
-    ],
-    functions: [
-      ["<code>resource_path(relative_path)</code>", "Chemin relatif.", "Retourne le bon chemin en mode développement ou exécutable PyInstaller.", "Retourne <code>Path</code>.", "Utilisé pour charger l'icône."]
-    ],
-    details: [
-      ["Constantes", "<code>APP_ICON_PATH</code>, <code>SEPARATORS_DIR</code>, <code>EXPORTS_DIR</code>, <code>SETTINGS_FILE</code>, <code>TEMP_DIR</code>, <code>CACHE_DIR</code>, <code>MAIL_DROP_DIR</code>."]
-    ]
-  },
-
-  "multiprep.utils.colors": {
-    title: "colors.py",
-    type: "fichier Python",
-    summary:
-      "Génère une palette de couleurs pour différencier visuellement les documents sources.",
-    imports: [
-      ["<code>hls_to_rgb</code>", "Conversion couleur standard.", "Convertit teinte/luminosité/saturation en couleur hexadécimale."]
-    ],
-    functions: [
-      ["<code>build_source_colors(count=100)</code>", "Nombre de couleurs.", "Produit une liste de couleurs variées.", "Retourne <code>list[str]</code>.", "Appelée au chargement du module pour créer <code>SOURCE_COLORS</code>."]
-    ]
-  },
-
-  assets: {
-    title: "assets/",
-    type: "dossier ressources",
-    summary:
-      "Contient les ressources graphiques de l'application. Actuellement, il sert surtout à stocker <code>multiprep-logo-2.ico</code>.",
-    details: [
-      ["Utilisé par", "<code>app_entry.py</code>, <code>main_window.py</code> et <code>MultiPrep.spec</code>."],
-      ["Pourquoi il existe", "Séparer les fichiers visuels du code Python."],
-      ["À modifier", "Si l'icône de l'application change, il faut modifier ce dossier et vérifier le fichier <code>MultiPrep.spec</code>."]
-    ]
-  },
-
-  separateurs: {
-    title: "separateurs/",
-    type: "dossier utilisateur",
-    summary:
-      "Dossier où placer les PDF de séparation. L'application le lit pour proposer des séparateurs dans le menu contextuel.",
-    details: [
-      ["Lu par", "<code>PdfService.separators</code>."],
-      ["Déclenché depuis", "<code>MainWindowActionsMixin.open_separator_dialog</code>."],
-      ["Pourquoi il existe", "Permettre à l'utilisateur d'ajouter ou retirer des modèles de séparation sans modifier le code."]
-    ]
-  },
-
-  exports: {
-    title: "exports/",
-    type: "dossier de sortie",
-    summary:
-      "Dossier où MultiPrep écrit les PDF finaux générés par l'utilisateur.",
-    details: [
-      ["Écrit par", "<code>PdfService.merge</code>."],
-      ["Nom des fichiers", "Construit par <code>name_service.py</code> au format date, nom, prénom et suffixe."],
-      ["À modifier ?", "Non, ce dossier contient des résultats utilisateur."]
-    ]
-  },
-
-  temp: {
-    title: "temp/",
-    type: "dossier temporaire",
-    summary:
-      "Dossier de travail local utilisé pendant l'exécution : miniatures, captures collées, images converties et pièces jointes Outlook.",
-    details: [
-      ["Sous-dossiers", "<code>temp/cache/</code> pour les miniatures et PDF temporaires, <code>temp/mail_attachments/</code> pour les pièces jointes extraites."],
-      ["Nettoyage", "Le cache PDF est nettoyé par <code>PdfService</code>. Les pièces jointes sont nettoyées par <code>drop_service.py</code>."],
-      ["À modifier ?", "Non. C'est un dossier généré ou utilisé par l'application."]
-    ]
-  },
-
-  dist: {
-    title: "dist/",
-    type: "dossier généré",
-    summary:
-      "Dossier de sortie créé par PyInstaller. Il contient l'exécutable final <code>MultiPrep.exe</code>.",
-    details: [
-      ["Important pour l'utilisateur final", "Oui, c'est le dossier utile pour distribuer l'application."],
-      ["Important pour comprendre le code", "Non. Le code source à lire est dans <code>multiprep/</code>."],
-      ["À modifier ?", "Non. Si l'exécutable doit changer, on modifie le code source puis on reconstruit."]
-    ]
-  },
-
-  build: {
-    title: "build/",
-    type: "dossier généré",
-    summary:
-      "Dossier technique créé par PyInstaller pendant la construction de l'exécutable.",
-    details: [
-      ["Contenu", "Fichiers d'analyse, archives intermédiaires, rapports et objets temporaires."],
-      ["Utilité", "Utile à PyInstaller, pas à l'utilisateur final."],
-      ["À modifier ?", "Non. On peut le supprimer, il sera recréé à la prochaine construction."]
-    ]
-  }
-};
-
-function renderTree() {
-  const tree = document.querySelector("#tree");
-  tree.innerHTML = "";
-
-  treeItems.forEach((item) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "tree__item";
-    button.dataset.id = item.id;
-    button.dataset.depth = item.depth;
-    button.innerHTML = `<span class="tree__type">${item.type === "folder" ? "dir" : "file"}</span><span>${item.label}</span>`;
-    button.addEventListener("click", () => selectDoc(item.id));
-    tree.appendChild(button);
-  });
-}
-
-function renderDoc(doc) {
-  const content = document.querySelector("#content");
-  const tags = [doc.type].filter(Boolean).map((tag) => `<span class="tag">${tag}</span>`).join("");
-
-  let html = `
-    <article class="doc"><section class="hero"><h2>${doc.title}</h2><p class="summary">${doc.summary || ""}</p><div class="tags">${tags}</div></section>
-  `;
-
-  if (doc.details) {
-    html += renderDetails(doc.details);
-  }
-  if (doc.imports) {
-    html += renderTableSection("Imports expliqués", ["Import", "Rôle", "Pourquoi ici"], doc.imports);
-  }
-  if (doc.classes) {
-    html += renderTableSection("Classes", ["Classe", "Responsabilité", "Attributs importants", "Méthodes principales"], doc.classes);
-  }
-  if (doc.functions) {
-    html += renderTableSection("Fonctions et méthodes", ["Fonction", "Paramètres", "Rôle", "Sortie", "Moment d'appel"], doc.functions);
-  }
-  if (doc.sections) {
-    doc.sections.forEach((section) => {
-      html += renderListSection(section.title, section.items);
-    });
-  }
-
-  html += `</article>`;
-  content.innerHTML = html;
-}
-
-function renderDetails(rows) {
-  return `
-    <section class="section card"><h3>Explication</h3><table class="detail-table"><tbody>
-          ${rows.map(([label, value]) => `<tr><th>${label}</th><td>${value}</td></tr>`).join("")}
-        </tbody></table></section>
-  `;
-}
-
-function renderTableSection(title, headers, rows) {
-  return `
-    <section class="section card"><h3>${title}</h3><table class="detail-table"><thead><tr>${headers.map((header) => `<th>${header}</th>`).join("")}</tr></thead><tbody>
-          ${rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}
-        </tbody></table></section>
-  `;
-}
-
-function renderListSection(title, items) {
-  return `
-    <section class="section card"><h3>${title}</h3><ul class="list">
-        ${items.map((item) => `<li>${item}</li>`).join("")}
-      </ul></section>
-  `;
-}
-
-function selectDoc(id) {
-  const doc = docs[id] || docs.overview;
-  renderDoc(doc);
-  document.querySelectorAll(".tree__item").forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.id === id);
-  });
-  document.querySelector("#content").focus({ preventScroll: true });
-}
-
-document.querySelector("#overviewButton").addEventListener("click", () => {
-  renderDoc(docs.overview);
-  document.querySelectorAll(".tree__item").forEach((button) => button.classList.remove("is-active"));
-});
-
-renderTree();
-renderDoc(docs.overview);
-
-
-</script></body></html>
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MultiPrep 2.0.0 — Documentation technique</title>
+  <link rel="icon" href="assets/multiprep-logo-2.ico">
+  <style>
+    :root{--yellow:#f9ab00;--yellow-soft:#fff7d6;--ink:#202124;--muted:#5f6368;--line:#dadce0;--white:#fff;--blue:#4285f4;--green:#34a853}
+    *{box-sizing:border-box}body{margin:0;color:var(--ink);background:#f8f9fa;font:15px/1.6 "Segoe UI",Arial,sans-serif}
+    header{display:flex;align-items:center;gap:20px;padding:24px 5vw;background:var(--white);border-bottom:4px solid var(--yellow)}
+    header img{width:72px;height:72px;object-fit:contain}header h1{margin:0;font-size:2rem}header p{margin:2px 0;color:var(--muted)}
+    .version{margin-left:auto;padding:8px 14px;border-radius:999px;background:var(--yellow-soft);font-weight:700;color:#7a4f00}
+    nav{position:sticky;top:0;z-index:2;display:flex;gap:8px;overflow:auto;padding:10px 5vw;background:var(--white);border-bottom:1px solid var(--line)}
+    nav a{white-space:nowrap;color:var(--ink);text-decoration:none;padding:6px 10px;border-radius:6px}nav a:hover{background:var(--yellow-soft)}
+    main{max-width:1180px;margin:auto;padding:30px 24px 60px}section{scroll-margin-top:70px;margin:0 0 26px;padding:24px;background:var(--white);border:1px solid var(--line);border-radius:12px}
+    h2{margin:0 0 14px;border-left:5px solid var(--yellow);padding-left:12px}h3{margin:20px 0 8px}p{margin:8px 0}code{padding:2px 5px;border-radius:4px;background:#f1f3f4;color:#174ea6}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}.card{padding:16px;border:1px solid var(--line);border-radius:9px;background:#fffdf7}
+    .card strong{display:block;margin-bottom:5px}.gmail{border-top:4px solid var(--yellow)}.classic{border-top:4px solid var(--blue)}
+    table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:var(--yellow-soft)}
+    pre{overflow:auto;padding:16px;border-radius:8px;background:#202124;color:#f8f9fa}.ok{padding:14px;border-left:4px solid var(--green);background:#e6f4ea}.warn{padding:14px;border-left:4px solid var(--yellow);background:var(--yellow-soft)}
+    footer{text-align:center;color:var(--muted);padding:28px}@media(max-width:650px){header{align-items:flex-start;flex-wrap:wrap}.version{margin-left:0}}
+  </style>
+</head>
+<body>
+<header>
+  <img src="assets/multiprep-logo-2.png" alt="Logo MultiPrep 2.0.0">
+  <div><h1>MultiPrep — Documentation technique</h1><p>Google Workspace, fichiers locaux et assemblage PDF</p></div>
+  <div class="version">Version 2.0.0</div>
+</header>
+<nav>
+  <a href="#vue">Vue d’ensemble</a><a href="#modes">Modes</a><a href="#architecture">Architecture</a>
+  <a href="#imports">Imports</a><a href="#performance">Performance</a><a href="#build">Build</a><a href="#tests">Tests</a>
+</nav>
+<main>
+  <section id="vue">
+    <h2>Vue d’ensemble</h2>
+    <p>MultiPrep est une application Windows PySide6 qui transforme des PDF, documents Word et images en un montage PDF ordonné. La version 2.0.0 démarre en mode Gmail et conserve un mode classique pour les fichiers locaux et applications de bureau.</p>
+    <div class="grid">
+      <div class="card"><strong>Entrées</strong>PDF, DOC, DOCX, JPG, JPEG et PNG.</div>
+      <div class="card"><strong>Traitement</strong>Aperçus, sélection, rotation, réorganisation et séparateurs.</div>
+      <div class="card"><strong>Sortie</strong><code>AAAA-MM-JJ_NOM-Prenom_P.pdf</code>.</div>
+    </div>
+  </section>
+  <section id="modes">
+    <h2>Modes d’utilisation</h2>
+    <div class="grid">
+      <div class="card gmail"><strong>Mode Gmail — par défaut</strong>Pièces jointes glissées depuis Gmail dans un navigateur. Les images présentes dans le corps du mail sont copiées puis collées avec <code>Ctrl+V</code> ou le menu Coller.</div>
+      <div class="card classic"><strong>Mode classique</strong>Fichiers venant de l’Explorateur, du Bureau ou d’une application de bureau qui expose un vrai fichier, dont Outlook bureau.</div>
+    </div>
+    <p class="warn"><strong>Important :</strong> le helper Gmail est un composant Windows natif intégré à la grande zone. Il sert à recevoir les fichiers virtuels que Qt ne peut pas toujours extraire seul. Il n’ouvre pas de fenêtre séparée.</p>
+  </section>
+  <section id="architecture">
+    <h2>Architecture actuelle</h2>
+    <table>
+      <tr><th>Fichier</th><th>Responsabilité</th></tr>
+      <tr><td><code>run.py</code></td><td>Point d’entrée unique.</td></tr>
+      <tr><td><code>ui/main_window.py</code></td><td>Fenêtre, modes, thème et cycle de vie du helper Gmail.</td></tr>
+      <tr><td><code>ui/editor_view.py</code></td><td>En-tête, formulaires et consignes des deux modes.</td></tr>
+      <tr><td><code>ui/page_grid_list.py</code></td><td>Liste, sélection, dépôt et réorganisation.</td></tr>
+      <tr><td><code>ui/page_card_delegate.py</code></td><td>Dessin léger des cartes sans widget par page.</td></tr>
+      <tr><td><code>ui/page_placeholder.py</code></td><td>Indicateur temporaire pendant un déplacement.</td></tr>
+      <tr><td><code>services/drop_service.py</code></td><td>Fichiers locaux, fichiers virtuels Windows, images et HTML.</td></tr>
+      <tr><td><code>services/gmail_import_service.py</code></td><td>Lancement, intégration et surveillance du helper natif.</td></tr>
+      <tr><td><code>services/word_service.py</code></td><td>Conversion DOC/DOCX vers PDF via Microsoft Word.</td></tr>
+      <tr><td><code>services/pdf_service.py</code></td><td>Modèles de pages, images, séparateurs et fusion.</td></tr>
+      <tr><td><code>services/thumbnail_service.py</code></td><td>Miniatures différées, groupées et mises en cache.</td></tr>
+      <tr><td><code>tools/GmailDropHelper.cs</code></td><td>Réception native des dépôts et collages Gmail sous Windows.</td></tr>
+    </table>
+  </section>
+  <section id="imports">
+    <h2>Chaînes d’import</h2>
+    <h3>Fichier local</h3>
+    <p>Qt transmet un chemin local → validation de l’extension → création du modèle → ajout immédiat à la grille → miniature en arrière-plan.</p>
+    <h3>Pièce jointe Gmail</h3>
+    <p>Le navigateur transmet un objet virtuel → le helper Windows récupère son contenu asynchrone → écrit un fichier temporaire → publie un manifeste → Python importe le fichier.</p>
+    <h3>Image dans le corps du mail</h3>
+    <p>Le presse-papiers est lu comme bitmap, image Qt, HTML/Base64 ou URL d’image → conversion en page PDF → ajout au montage.</p>
+    <h3>Document Word</h3>
+    <p>Microsoft Word s’exécute sans interface via PowerShell COM → export PDF → import par le moteur PDF commun.</p>
+  </section>
+  <section id="performance">
+    <h2>Moteur d’affichage rapide</h2>
+    <ul>
+      <li>aucun rendu de miniature pendant la création des modèles ;</li>
+      <li>delegate Qt léger au lieu d’un widget complet par page ;</li>
+      <li>jusqu’à quatre lots de miniatures en parallèle ;</li>
+      <li>ouverture groupée d’un même PDF ;</li>
+      <li>ajout incrémental sans reconstruire les pages existantes ;</li>
+      <li>cache local des aperçus.</li>
+    </ul>
+    <p class="ok">Référence mesurée : 500 pages injectées en environ 10–12 ms ; 120 miniatures réelles en environ 0,63 seconde sur le poste de développement.</p>
+  </section>
+  <section id="build">
+    <h2>Compilation</h2>
+    <p>Compiler d’abord <code>assets/GmailDropHelper.exe</code> depuis le source C#, puis lancer PyInstaller avec <code>MultiPrep.spec</code>.</p>
+    <pre>python -m PyInstaller --noconfirm --clean `
+  --workpath "$env:TEMP\multiprep-build" `
+  --distpath dist MultiPrep.spec</pre>
+    <p>Le livrable officiel est <code>dist/MultiPrep.exe</code>. Les logos 2.0.0 et le helper Gmail sont intégrés par le fichier spec.</p>
+  </section>
+  <section id="tests">
+    <h2>Tests et validation</h2>
+    <pre>python -m compileall -q multiprep tests
+python -m unittest discover -s tests -v
+git diff --check</pre>
+    <p>Les tests couvrent les chemins locaux, Word, les images Qt/HTML, les fichiers virtuels de navigateur et la compatibilité Outlook.</p>
+  </section>
+</main>
+<footer>MultiPrep 2.0.0 — documentation synchronisée avec le livrable Windows.</footer>
+</body>
+</html>
