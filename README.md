@@ -1,4 +1,10 @@
-# MultiPrep 2.0.0
+<p align="center">
+  <img src="assets/multiprep-logo-2.png" alt="Logo MultiPrep 2.0.0" width="180">
+</p>
+
+<h1 align="center">MultiPrep 2.0.0</h1>
+
+<p align="center"><strong>Édition Google Workspace · Windows</strong></p>
 
 MultiPrep est une application Windows de préparation et d’assemblage de dossiers PDF. Elle importe des documents de plusieurs sources, affiche leurs pages, permet de les réorganiser et génère un PDF final avec un nom normalisé.
 
